@@ -55,18 +55,19 @@ const buildBaseMatch = (range?: DateRangeFilter) => {
 
 /**
  * Get dashboard summary — supports an optional date range filter.
- * Callers pass ?from=ISO&to=ISO on the query string; controller parses them here.
+ * Section 1.5: Uses $facet to compute summary and count in a single pipeline pass
  */
 export const getDashboardSummary = async (range?: DateRangeFilter): Promise<SummaryData> => {
   const result = await FinancialRecord.aggregate([
     { $match: buildBaseMatch(range) },
     {
-      $group: {
-        _id: '$type',
-        total: { $sum: '$amount' },
-        count: { $sum: 1 },
-      },
-    },
+      $facet: {
+        byType: [
+          { $group: { _id: '$type', total: { $sum: '$amount' }, count: { $sum: 1 } } }
+        ],
+        totalCount: [{ $count: 'n' }]
+      }
+    }
   ]).allowDiskUse(true);
 
   let totalIncome = 0;
@@ -75,7 +76,14 @@ export const getDashboardSummary = async (range?: DateRangeFilter): Promise<Summ
   let expenseCount = 0;
   let recordCount = 0;
 
-  result.forEach((item) => {
+  const byType = result[0]?.byType || [];
+  const totalCountArr = result[0]?.totalCount || [];
+  
+  if (totalCountArr.length > 0) {
+    recordCount = totalCountArr[0].n;
+  }
+
+  byType.forEach((item: any) => {
     if (item._id === RecordType.INCOME) {
       totalIncome = Math.round(item.total * 100) / 100;
       incomeCount = item.count;
@@ -83,7 +91,6 @@ export const getDashboardSummary = async (range?: DateRangeFilter): Promise<Summ
       totalExpense = Math.round(item.total * 100) / 100;
       expenseCount = item.count;
     }
-    recordCount += item.count;
   });
 
   logger.info('Dashboard summary generated');

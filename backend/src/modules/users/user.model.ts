@@ -94,6 +94,13 @@ const userSchema = new Schema<IUser>(
 userSchema.index({ email: 1, phone: 1 });
 userSchema.index({ status: 1, role: 1 });
 
+// Production optimization indexes (Section 1.1)
+// Covers getAllUsers: search by name/email + role + status filter
+userSchema.index({ name: 1, email: 1, role: 1, status: 1 });
+
+// Covers authenticate middleware: findById + status check
+userSchema.index({ _id: 1, status: 1 });
+
 // Ensure passwordHash is never returned in JSON
 userSchema.set('toJSON', {
   transform: (_doc, ret: any) => {

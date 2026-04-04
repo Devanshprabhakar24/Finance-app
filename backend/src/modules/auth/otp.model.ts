@@ -73,4 +73,8 @@ otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 // Compound index for efficient queries
 otpSchema.index({ identifier: 1, purpose: 1, isUsed: 1 });
 
+// Production optimization index (Section 1.1)
+// Covers verifyOtp query: identifier + purpose + isUsed + sort by createdAt
+otpSchema.index({ identifier: 1, purpose: 1, isUsed: 1, createdAt: -1 });
+
 export const Otp = mongoose.model<IOtp>('Otp', otpSchema);

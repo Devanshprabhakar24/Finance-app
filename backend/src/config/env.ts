@@ -53,6 +53,9 @@ const envSchema = z.object({
 
   // CORS
   ALLOWED_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
+
+  // Redis (Section 5.1 - optional, gracefully degrades if not configured)
+  REDIS_URL: z.string().url().optional(),
 });
 
 const parseEnv = () => {
@@ -105,6 +108,7 @@ const parseEnv = () => {
         apiSecret: parsed.CLOUDINARY_API_SECRET,
       },
       allowedOrigins: parsed.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()),
+      redisUrl: parsed.REDIS_URL,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {

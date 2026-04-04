@@ -40,16 +40,11 @@ export const getAllRecords = async (
     if (filters.to) query.date.$lte = new Date(filters.to);
   }
 
-  // Full-text search across title, notes, and category
+  // Full-text search across title, notes, and category (Section 1.2)
+  // Uses $text operator with the text index for better performance
   if (filters.search) {
-    const regex = new RegExp(
-      filters.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-      'i'
-    );
-    query.$and = [
-      ...(query.$and ?? []),
-      { $or: [{ title: regex }, { notes: regex }, { category: regex }] },
-    ];
+    // NOTE: Collection scan on regex — upgrade to Atlas Search for datasets > 100k records
+    (query as any).$text = { $search: filters.search };
   }
 
   return paginate(
@@ -67,16 +62,18 @@ export const getAllRecords = async (
 };
 
 /**
- * Get record by ID
+ * Get record by ID (Section 1.3 - uses lean() for read-only queries)
  */
 export const getRecordById = async (recordId: string): Promise<IFinancialRecord> => {
   const record = await FinancialRecord.findOne({
     _id: recordId,
     isDeleted: false,
-  }).populate('createdBy', 'name email');
+  })
+    .populate('createdBy', 'name email')
+    .lean();
 
   if (!record) throw new NotFoundError('Financial record not found');
-  return record;
+  return record as IFinancialRecord;
 };
 
 /**

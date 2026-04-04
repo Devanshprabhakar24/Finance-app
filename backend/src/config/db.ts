@@ -8,12 +8,17 @@ import { logger } from '../utils/logger';
  */
 export const connectDB = async (): Promise<void> => {
   try {
-    // Optimized connection options
+    // Production-optimized connection options (Section 1.4)
     const conn = await mongoose.connect(env.mongodbUri, {
-      maxPoolSize: 10, // Maximum number of connections in the pool
-      minPoolSize: 5, // Minimum number of connections in the pool
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      serverSelectionTimeoutMS: 5000, // Timeout for server selection
+      maxPoolSize: env.nodeEnv === 'production' ? 50 : 10,
+      minPoolSize: env.nodeEnv === 'production' ? 10 : 2,
+      maxIdleTimeMS: 30000, // Close idle connections after 30s
+      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 5000,
+      heartbeatFrequencyMS: 10000, // Check replica set health every 10s
+      retryWrites: true,
+      retryReads: true,
+      compressors: ['zlib'], // Compress wire protocol messages
       family: 4, // Use IPv4, skip trying IPv6
     });
     
@@ -23,6 +28,16 @@ export const connectDB = async (): Promise<void> => {
     if (env.nodeEnv === 'development') {
       mongoose.set('debug', true);
     }
+    
+    // Synchronize indexes on connection (Section 1.1)
+    mongoose.connection.on('open', async () => {
+      try {
+        await mongoose.connection.syncIndexes();
+        logger.info('MongoDB indexes synchronized');
+      } catch (err) {
+        logger.error('Error synchronizing indexes:', err);
+      }
+    });
     
     // Handle connection events
     mongoose.connection.on('error', (err) => {

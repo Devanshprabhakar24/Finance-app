@@ -19,6 +19,7 @@ export interface GetUsersOptions extends PaginationOptions {
 
 /**
  * Get all users with pagination, search, and filters (ADMIN)
+ * NOTE: Regex search is a collection scan — upgrade to Atlas Search for datasets > 100k users
  */
 export const getAllUsers = async (
   options: GetUsersOptions
@@ -37,12 +38,14 @@ export const getAllUsers = async (
 };
 
 /**
- * Get user by ID (ADMIN)
+ * Get user by ID (ADMIN) - Section 1.3: uses lean() for read-only queries
  */
 export const getUserById = async (userId: string): Promise<IUser> => {
-  const user = await User.findById(userId).select('-passwordHash');
+  const user = await User.findById(userId)
+    .select('name email phone role status isVerified profileImage lastLogin createdAt')
+    .lean();
   if (!user) throw new NotFoundError('User not found');
-  return user;
+  return user as IUser;
 };
 
 /**
@@ -172,12 +175,14 @@ export const softDeleteUser = async (
 };
 
 /**
- * Get current user profile
+ * Get current user profile - Section 1.3: uses lean() for read-only queries
  */
 export const getMyProfile = async (userId: string): Promise<IUser> => {
-  const user = await User.findById(userId).select('-passwordHash');
+  const user = await User.findById(userId)
+    .select('name email phone role status isVerified profileImage lastLogin createdAt')
+    .lean();
   if (!user) throw new NotFoundError('User not found');
-  return user;
+  return user as IUser;
 };
 
 /**

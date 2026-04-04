@@ -72,7 +72,7 @@ export class InternalError extends AppError {
 }
 
 /**
- * Global error handler middleware
+ * Global error handler middleware (Section 4.2: includes correlation ID)
  */
 export const errorHandler = (
   err: Error,
@@ -81,11 +81,21 @@ export const errorHandler = (
   _next: NextFunction
 ): Response => {
   logger.error('Error:', {
+    correlationId: (req as any).correlationId,
     message: err.message,
     stack: err.stack,
     path: req.path,
     method: req.method,
+    userId: (req as any).user?._id,
   });
+
+  // Handle Multer errors (Section 2.7: file too large, wrong type)
+  if ((err as any).name === 'MulterError') {
+    if ((err as any).code === 'LIMIT_FILE_SIZE') {
+      return sendError(res, 'File too large. Maximum size is 5MB.', 'FILE_TOO_LARGE', undefined, 413);
+    }
+    return sendError(res, err.message, 'UPLOAD_ERROR', undefined, 400);
+  }
 
   // Handle AppError instances
   if (err instanceof AppError) {

@@ -6,6 +6,7 @@ export interface PaginationOptions {
   sortBy?: string;
   order?: 'asc' | 'desc';
   allowedSortFields?: string[]; // Whitelist of allowed sort fields
+  hint?: Record<string, 1 | -1 | 'text'>; // Section 1.7: Index hint for countDocuments
 }
 
 export interface PaginationResult<T> {
@@ -20,6 +21,7 @@ export interface PaginationResult<T> {
 
 /**
  * Paginate Mongoose query results
+ * Section 1.3: lean() is always enabled — callers must not call .save() on paginated results
  * @param model - Mongoose model
  * @param filter - Query filter
  * @param options - Pagination options
@@ -45,14 +47,21 @@ export const paginate = async <T>(
   
   const order = options.order === 'asc' ? 1 : -1;
 
+  // Section 1.7: Use hint for countDocuments if provided
+  const countQuery = model.countDocuments(filter);
+  if (options.hint) {
+    countQuery.hint(options.hint);
+  }
+
   const [data, totalCount] = await Promise.all([
     model
       .find(filter)
       .sort({ [sortBy]: order })
       .skip(skip)
       .limit(limit)
-      .populate(populate || ''),
-    model.countDocuments(filter),
+      .populate(populate || '')
+      .lean(), // Section 1.3: Always use lean() for read-only pagination
+    countQuery,
   ]);
 
   const totalPages = Math.ceil(totalCount / limit);

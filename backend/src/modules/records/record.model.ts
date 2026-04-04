@@ -95,6 +95,16 @@ financialRecordSchema.index({ isDeleted: 1, type: 1, category: 1, date: -1 }); /
 financialRecordSchema.index({ createdBy: 1, isDeleted: 1 });
 financialRecordSchema.index({ type: 1, date: -1 });
 
+// Production optimization indexes (Section 1.1)
+// Covers getRecentRecords: sort by date desc, filter isDeleted
+financialRecordSchema.index({ isDeleted: 1, date: -1, createdAt: -1 });
+
+// Full-text search on title + category + notes
+financialRecordSchema.index(
+  { title: 'text', notes: 'text', category: 'text' },
+  { weights: { title: 3, category: 2, notes: 1 }, name: 'record_text_search' }
+);
+
 export const FinancialRecord = mongoose.model<IFinancialRecord>(
   'FinancialRecord',
   financialRecordSchema
