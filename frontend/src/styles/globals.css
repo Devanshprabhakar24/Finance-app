@@ -1,0 +1,295 @@
+/* Import Inter font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light mode colors */
+    --background: 248 250 252;
+    --foreground: 15 23 42;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 168 85 247; /* purple-500 */
+  }
+
+  .dark {
+    /* Dark mode colors - Deep navy theme (Zorvyn) */
+    --background: 10 15 30; /* #0A0F1E */
+    --foreground: 250 250 250;
+    --card: 15 23 42; /* slate-900 */
+    --card-foreground: 250 250 250;
+    --border: 30 41 59; /* slate-800 */
+    --input: 30 41 59;
+    --ring: 14 165 233; /* sky-500 */
+  }
+
+  body {
+    @apply bg-[#0A0F1E] text-slate-50;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  /* Numbers and data */
+  .font-data {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Smooth transitions */
+  * {
+    @apply transition-colors duration-200;
+  }
+}
+
+@layer components {
+  /* Button variants with sky-blue/indigo gradient theme (Zorvyn) */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95;
+  }
+
+  .btn-primary {
+    @apply btn bg-gradient-to-r from-sky-500 to-indigo-600 text-white hover:from-sky-600 hover:to-indigo-700 focus:ring-sky-500 shadow-lg hover:shadow-xl hover:-translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply btn bg-slate-700 text-slate-100 hover:bg-slate-600 focus:ring-sky-500 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600 shadow-sm hover:shadow-md border border-slate-600 dark:border-slate-600;
+  }
+
+  .btn-success {
+    @apply btn bg-gradient-to-r from-success-600 to-success-500 text-white hover:from-success-700 hover:to-success-600 focus:ring-success-500 shadow-md hover:shadow-lg hover:-translate-y-0.5;
+  }
+
+  .btn-danger {
+    @apply btn bg-gradient-to-r from-danger-600 to-danger-500 text-white hover:from-danger-700 hover:to-danger-600 focus:ring-danger-500 shadow-md hover:shadow-lg hover:-translate-y-0.5;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-zinc-800 dark:hover:bg-zinc-800 focus:ring-purple-500;
+  }
+
+  /* Enhanced Card with dark navy theme */
+  .card {
+    @apply bg-slate-900/50 backdrop-blur-xl rounded-xl border border-slate-800 p-6 shadow-lg hover:shadow-xl transition-shadow duration-300;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-2xl hover:-translate-y-1 cursor-pointer hover:border-sky-500/50;
+  }
+
+  /* Input field with dark theme */
+  .input-field {
+    @apply w-full rounded-lg border border-slate-700 bg-slate-800/50 text-white px-4 py-2.5 text-sm transition-all duration-200 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 placeholder:text-slate-500;
+  }
+
+  /* Badge with sky-blue theme */
+  .badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm;
+  }
+
+  .badge-primary {
+    @apply badge bg-sky-500/20 text-sky-300 ring-1 ring-sky-500/30;
+  }
+
+  .badge-success {
+    @apply badge bg-green-500/20 text-green-300 ring-1 ring-green-500/30;
+  }
+
+  .badge-danger {
+    @apply badge bg-red-500/20 text-red-300 ring-1 ring-red-500/30;
+  }
+
+  .badge-warning {
+    @apply badge bg-yellow-500/20 text-yellow-300 ring-1 ring-yellow-500/30;
+  }
+
+  /* Gradient text with sky-blue/indigo (Zorvyn) */
+  .gradient-text {
+    @apply bg-gradient-to-r from-sky-500 to-indigo-600 bg-clip-text text-transparent;
+  }
+
+  .gradient-text-success {
+    @apply bg-gradient-to-r from-success-600 via-success-500 to-success-400 bg-clip-text text-transparent;
+  }
+
+  .gradient-text-danger {
+    @apply bg-gradient-to-r from-danger-600 via-danger-500 to-danger-400 bg-clip-text text-transparent;
+  }
+
+  /* Glass morphism effect with dark theme */
+  .glass {
+    @apply bg-white/10 dark:bg-slate-800/50 backdrop-blur-xl border border-white/20 dark:border-slate-700/50;
+  }
+
+  /* Shimmer effect */
+  .shimmer {
+    @apply relative overflow-hidden;
+  }
+
+  .shimmer::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full;
+    background: linear-gradient(90deg, transparent, rgba(14, 165, 233, 0.2), transparent);
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar with sky-blue theme */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-slate-800 dark:bg-slate-800 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-sky-500 dark:bg-sky-600 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-sky-600 dark:bg-sky-500;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Enhanced Animations */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+    20%, 40%, 60%, 80% { transform: translateX(4px); }
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  @keyframes pulse-success {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  }
+
+  .animate-pulse-success {
+    animation: pulse-success 0.6s ease-out;
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.4s ease-out;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+
+  /* Skeleton loader with shimmer */
+  .skeleton {
+    @apply animate-pulse bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 rounded;
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Glow effects with sky-blue theme (Zorvyn) */
+  .glow-primary {
+    box-shadow: 0 0 30px rgba(14, 165, 233, 0.4);
+  }
+
+  .glow-success {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .glow-danger {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  /* Gradient backgrounds with sky-blue/indigo (Zorvyn) */
+  .bg-gradient-primary {
+    @apply bg-gradient-to-br from-sky-500 to-indigo-600;
+  }
+
+  .bg-gradient-success {
+    @apply bg-gradient-to-br from-success-500 to-success-700;
+  }
+
+  .bg-gradient-danger {
+    @apply bg-gradient-to-br from-danger-500 to-danger-700;
+  }
+
+  .bg-gradient-dark {
+    @apply bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700;
+  }
+}

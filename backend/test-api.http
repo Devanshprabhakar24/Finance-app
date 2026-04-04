@@ -1,0 +1,223 @@
+### Finance Dashboard API Tests
+### Base URL
+@baseUrl = http://localhost:5000/api/v1
+@adminToken = YOUR_ADMIN_TOKEN_HERE
+@analystToken = YOUR_ANALYST_TOKEN_HERE
+@viewerToken = YOUR_VIEWER_TOKEN_HERE
+
+### ============================================
+### AUTH ENDPOINTS
+### ============================================
+
+### 1. Register - Validate Email/Phone
+POST {{baseUrl}}/auth/register/validate
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "phone": "+911234567890"
+}
+
+### 2. Verify OTP
+POST {{baseUrl}}/auth/verify-otp
+Content-Type: application/json
+
+{
+  "identifier": "test@example.com",
+  "otp": "123456"
+}
+
+### 3. Complete Registration
+POST {{baseUrl}}/auth/register/complete
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "phone": "+911234567890",
+  "name": "Test User",
+  "password": "Test@123"
+}
+
+### 4. Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin@wombto18.com",
+  "password": "admin123"
+}
+
+### 5. Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+### 6. Logout
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{adminToken}}
+
+### ============================================
+### DASHBOARD ENDPOINTS (All Roles)
+### ============================================
+
+### 7. Get Dashboard Summary
+GET {{baseUrl}}/dashboard/summary
+Authorization: Bearer {{adminToken}}
+
+### 8. Get Recent Transactions
+GET {{baseUrl}}/dashboard/recent?limit=10
+Authorization: Bearer {{adminToken}}
+
+### ============================================
+### ANALYTICS ENDPOINTS (Analyst & Admin)
+### ============================================
+
+### 9. Get Category Breakdown
+GET {{baseUrl}}/dashboard/by-category
+Authorization: Bearer {{adminToken}}
+
+### 10. Get Monthly Trends
+GET {{baseUrl}}/dashboard/trends?year=2024
+Authorization: Bearer {{adminToken}}
+
+### 11. Get Top Categories
+GET {{baseUrl}}/dashboard/top-categories
+Authorization: Bearer {{adminToken}}
+
+### ============================================
+### RECORDS ENDPOINTS
+### ============================================
+
+### 12. Get All Records (Analyst & Admin)
+GET {{baseUrl}}/records?page=1&limit=10&type=INCOME
+Authorization: Bearer {{adminToken}}
+
+### 13. Get Single Record
+GET {{baseUrl}}/records/RECORD_ID_HERE
+Authorization: Bearer {{adminToken}}
+
+### 14. Create Record (Admin Only)
+POST {{baseUrl}}/records
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "title": "Monthly Salary",
+  "amount": 50000,
+  "type": "INCOME",
+  "category": "Salary",
+  "date": "2024-01-15",
+  "notes": "January salary payment"
+}
+
+### 15. Update Record (Admin Only)
+PATCH {{baseUrl}}/records/RECORD_ID_HERE
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "title": "Updated Salary",
+  "amount": 55000
+}
+
+### 16. Delete Record (Admin Only)
+DELETE {{baseUrl}}/records/RECORD_ID_HERE
+Authorization: Bearer {{adminToken}}
+
+### ============================================
+### USER MANAGEMENT ENDPOINTS (Admin Only)
+### ============================================
+
+### 17. Get All Users
+GET {{baseUrl}}/users?page=1&limit=10
+Authorization: Bearer {{adminToken}}
+
+### 18. Get User by ID
+GET {{baseUrl}}/users/USER_ID_HERE
+Authorization: Bearer {{adminToken}}
+
+### 19. Update User Role
+PATCH {{baseUrl}}/users/USER_ID_HERE/role
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "role": "ANALYST"
+}
+
+### 20. Update User Status
+PATCH {{baseUrl}}/users/USER_ID_HERE/status
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "status": "INACTIVE"
+}
+
+### ============================================
+### PROFILE ENDPOINTS (All Authenticated Users)
+### ============================================
+
+### 21. Get My Profile
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{adminToken}}
+
+### 22. Update My Profile
+PATCH {{baseUrl}}/users/me
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated Name",
+  "phone": "+919999999999"
+}
+
+### ============================================
+### PERFORMANCE TESTS
+### ============================================
+
+### 23. Test Dashboard Performance (All endpoints)
+GET {{baseUrl}}/dashboard/summary
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{baseUrl}}/dashboard/by-category
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{baseUrl}}/dashboard/trends
+Authorization: Bearer {{adminToken}}
+
+###
+GET {{baseUrl}}/dashboard/recent
+Authorization: Bearer {{adminToken}}
+
+### ============================================
+### ERROR HANDLING TESTS
+### ============================================
+
+### 24. Test Invalid Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "invalid@example.com",
+  "password": "wrongpassword"
+}
+
+### 25. Test Unauthorized Access (No Token)
+GET {{baseUrl}}/records
+
+### 26. Test Forbidden Access (Viewer accessing Admin endpoint)
+GET {{baseUrl}}/users
+Authorization: Bearer {{viewerToken}}
+
+### 27. Test Invalid Record Creation
+POST {{baseUrl}}/records
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "title": "Invalid",
+  "amount": -100,
+  "type": "INVALID_TYPE"
+}
