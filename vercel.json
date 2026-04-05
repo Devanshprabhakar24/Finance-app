@@ -1,22 +1,15 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "Finance-app-improved/frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "Finance-app-improved/frontend/dist",
-        "installCommand": "cd Finance-app-improved/frontend && npm install --legacy-peer-deps"
-      }
-    }
-  ],
+  "buildCommand": "npm run build:frontend",
+  "outputDirectory": "frontend/dist",
+  "installCommand": "npm install && npm run install:all",
   "routes": [
     {
       "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/Finance-app-improved/frontend/dist/index.html"
+      "dest": "/index.html"
     }
   ],
   "env": {
