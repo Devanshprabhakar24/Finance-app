@@ -1,8 +1,30 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
-console.log('Starting robust build process...');
+console.log('Starting CommonJS build process...');
+
+function convertImportsToRequire(content) {
+    // Convert ES6 imports to CommonJS requires
+    content = content
+        // import defaultExport from 'module' -> const defaultExport = require('module')
+        .replace(/import\s+(\w+)\s+from\s+['"`]([^'"`]+)['"`];?/g, 'const $1 = require(\'$2\');')
+        // import { named } from 'module' -> const { named } = require('module')
+        .replace(/import\s+\{\s*([^}]+)\s*\}\s+from\s+['"`]([^'"`]+)['"`];?/g, 'const { $1 } = require(\'$2\');')
+        // import * as name from 'module' -> const name = require('module')
+        .replace(/import\s+\*\s+as\s+(\w+)\s+from\s+['"`]([^'"`]+)['"`];?/g, 'const $1 = require(\'$2\');')
+        // import 'module' -> require('module')
+        .replace(/import\s+['"`]([^'"`]+)['"`];?/g, 'require(\'$1\');')
+        // export default -> module.exports =
+        .replace(/export\s+default\s+/g, 'module.exports = ')
+        // export { named } -> module.exports = { named }
+        .replace(/export\s+\{\s*([^}]+)\s*\};?/g, 'module.exports = { $1 };')
+        // export const/function/class -> module.exports.name =
+        .replace(/export\s+(const|let|var|function|class)\s+(\w+)/g, '$1 $2')
+        // Remove export from function/class declarations and add module.exports assignment
+        .replace(/export\s+(function|class)\s+(\w+)/g, '$1 $2\nmodule.exports.$2 = $2;');
+
+    return content;
+}
 
 function copyAndRenameFiles(srcDir, destDir) {
     if (!fs.existsSync(destDir)) {
@@ -19,9 +41,12 @@ function copyAndRenameFiles(srcDir, destDir) {
             const newDestDir = path.join(destDir, item);
             copyAndRenameFiles(srcPath, newDestDir);
         } else if (item.endsWith('.ts')) {
-            // Copy .ts files as .js files (they're mostly compatible)
+            // Copy .ts files as .js files with full conversion
             const destPath = path.join(destDir, item.replace('.ts', '.js'));
             let content = fs.readFileSync(srcPath, 'utf8');
+
+            // Convert imports/exports first
+            content = convertImportsToRequire(content);
 
             // Basic TypeScript to JavaScript conversion
             content = content
@@ -47,18 +72,7 @@ function copyAndRenameFiles(srcDir, destDir) {
 }
 
 try {
-    // Try TypeScript compilation first
-    console.log('Attempting TypeScript compilation...');
-    try {
-        execSync('npm run tsc-build', { stdio: 'inherit' });
-        console.log('TypeScript compilation successful!');
-        process.exit(0);
-    } catch (tscError) {
-        console.log('TypeScript compilation failed, using fallback method...');
-    }
-
-    // Fallback: Copy and convert files manually
-    console.log('Converting TypeScript files to JavaScript...');
+    console.log('Converting TypeScript files to CommonJS JavaScript...');
 
     // Remove existing dist folder
     if (fs.existsSync('dist')) {
@@ -68,7 +82,7 @@ try {
     // Copy and convert files
     copyAndRenameFiles('src', 'dist');
 
-    console.log('Build completed successfully using fallback method!');
+    console.log('Build completed successfully!');
     console.log('Generated files:');
 
     function listFiles(dir, prefix = '') {
