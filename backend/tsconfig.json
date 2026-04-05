@@ -10,22 +10,24 @@
     "noImplicitReturns": false,
     "noImplicitThis": false,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": false,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": false,
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": ["./node_modules/@types"],
+    "types": []
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.*", "**/*.spec.*"],
   "ts-node": {
-    "transpileOnly": true
+    "transpileOnly": true,
+    "esm": false
   }
 }
