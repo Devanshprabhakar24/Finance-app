@@ -162,5 +162,5 @@ export const testEmail = asyncHandler(async (req: Request, res: Response) => {
 
   const { sendOtpEmail } = await import('../../config/mailer');
   await sendOtpEmail(email, '123456', 'TEST');
-  sendSuccess(res, 'Test email sent successfully');
+  return sendSuccess(res, 'Test email sent successfully');
 });

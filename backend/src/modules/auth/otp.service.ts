@@ -5,7 +5,7 @@ import { sendOtpEmail } from '../../config/mailer';
 import { sendOtpSms } from '../../config/twilio';
 import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
-import { TooManyAttemptsError, ValidationError } from '../../middleware/errorHandler';
+import { ValidationError } from '../../middleware/errorHandler';
 
 /**
  * Determine if identifier is email or phone
