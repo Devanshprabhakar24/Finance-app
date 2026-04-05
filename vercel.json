@@ -2,11 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "frontend/package.json",
+      "src": "Finance-app-improved/frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist",
-        "installCommand": "npm install --legacy-peer-deps"
+        "distDir": "Finance-app-improved/frontend/dist",
+        "installCommand": "cd Finance-app-improved/frontend && npm install --legacy-peer-deps"
       }
     }
   ],
@@ -16,7 +16,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/Finance-app-improved/frontend/dist/index.html"
     }
   ]
 }
