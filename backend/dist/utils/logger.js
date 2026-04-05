@@ -19,7 +19,7 @@ const colors = {
 
 winston.addColors(colors);
 
-// Section 4.1: Structured JSON logging in production
+// Section 4.1: Structured JSON logging in production - Updated for Render deployment
 const productionFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
