@@ -11,8 +11,15 @@ const port = process.env.PORT || 8000;
 app.use(helmet());
 app.use(compression());
 app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000'],
-    credentials: true
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'https://finance-103y771kv-devansh-prabhakars-projects.vercel.app',
+        /^https:\/\/.*\.vercel\.app$/
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -57,8 +64,81 @@ app.get('/api/docs', (req, res) => {
         endpoints: [
             { path: '/', method: 'GET', description: 'API information' },
             { path: '/api/health', method: 'GET', description: 'Health check' },
-            { path: '/api/docs', method: 'GET', description: 'API documentation' }
+            { path: '/api/docs', method: 'GET', description: 'API documentation' },
+            { path: '/api/auth/login', method: 'POST', description: 'User login' },
+            { path: '/api/auth/register', method: 'POST', description: 'User registration' }
         ]
+    });
+});
+
+// Authentication routes
+app.post('/api/auth/login', (req, res) => {
+    log('info', 'Login attempt');
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({
+            error: 'Validation Error',
+            message: 'Email and password are required'
+        });
+    }
+
+    // For now, return a mock response
+    // TODO: Implement actual authentication
+    res.json({
+        success: true,
+        message: 'Login successful',
+        user: {
+            id: '1',
+            email: email,
+            name: 'Demo User',
+            role: 'user'
+        },
+        token: 'demo-jwt-token'
+    });
+});
+
+app.post('/api/auth/register', (req, res) => {
+    log('info', 'Registration attempt');
+    const { email, password, name } = req.body;
+
+    if (!email || !password || !name) {
+        return res.status(400).json({
+            error: 'Validation Error',
+            message: 'Email, password, and name are required'
+        });
+    }
+
+    // For now, return a mock response
+    // TODO: Implement actual registration
+    res.json({
+        success: true,
+        message: 'Registration successful',
+        user: {
+            id: '2',
+            email: email,
+            name: name,
+            role: 'user'
+        }
+    });
+});
+
+// Dashboard/records routes
+app.get('/api/records', (req, res) => {
+    log('info', 'Records requested');
+    res.json({
+        success: true,
+        data: [],
+        message: 'No records found'
+    });
+});
+
+app.post('/api/records', (req, res) => {
+    log('info', 'Record creation attempt');
+    res.json({
+        success: true,
+        message: 'Record created successfully',
+        data: { id: Date.now(), ...req.body }
     });
 });
 
