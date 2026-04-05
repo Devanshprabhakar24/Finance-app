@@ -30,14 +30,6 @@ export async function getUsers(filters?: UserFilters) {
 }
 
 /**
- * Get user statistics (Admin only)
- */
-export async function getUserStats() {
-  const response = await apiClient.get('/users/stats');
-  return response.data;
-}
-
-/**
  * Get single user by ID (Admin only)
  */
 export async function getUser(id: string): Promise<{ data: User }> {
@@ -105,7 +97,7 @@ export async function deleteUser(id: string): Promise<void> {
  * Get own profile
  */
 export async function getProfile(): Promise<{ data: User }> {
-  const response = await apiClient.get<{ data: User }>('/users/profile');
+  const response = await apiClient.get<{ data: User }>('/users/me');
   return response.data;
 }
 
@@ -117,11 +109,36 @@ export async function updateProfile(id: string, data: { name?: string; phone?: s
   return response.data;
 }
 
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordWithOtpPayload {
+  currentPassword: string;
+  newPassword: string;
+  otp: string;
+}
+
 /**
  * Change password
  */
 export async function changePassword(data: ChangePasswordPayload): Promise<void> {
-  await apiClient.post('/users/change-password', data);
+  await apiClient.patch('/users/me/change-password', data);
+}
+
+/**
+ * Request OTP for password change
+ */
+export async function requestPasswordChangeOtp(): Promise<void> {
+  await apiClient.post('/users/me/request-password-change-otp');
+}
+
+/**
+ * Change password with OTP verification
+ */
+export async function changePasswordWithOtp(data: ChangePasswordWithOtpPayload): Promise<void> {
+  await apiClient.patch('/users/me/change-password-with-otp', data);
 }
 
 /**
@@ -129,10 +146,10 @@ export async function changePassword(data: ChangePasswordPayload): Promise<void>
  */
 export async function uploadAvatar(file: File): Promise<{ url: string }> {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('avatar', file);
 
   const response = await apiClient.post<{ data: { url: string } }>(
-    '/users/upload-avatar',
+    '/users/me/avatar',
     formData,
     {
       headers: {

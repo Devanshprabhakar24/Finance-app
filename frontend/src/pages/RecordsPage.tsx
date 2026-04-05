@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getRecords, createRecord, updateRecord, deleteRecord } from '@/api/records.api';
+import { queryKeys } from '@/api/queryClient';
 import { useAuthStore } from '@/store/auth.store';
 import { useDebounce } from '@/hooks/useDebounce';
 import {
@@ -26,6 +27,14 @@ import { formatCurrency, formatDate } from '@/utils/format';
 import type { CreateRecordPayload } from '@/api/records.api';
 
 import apiClient from '@/api/axios';
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
 
 interface FinancialRecord {
   _id: string;
@@ -63,6 +72,11 @@ export default function RecordsPage() {
   // Debounce search input
   const debouncedSearch = useDebounce(search, 300);
 
+  // Reset page when filters change
+  useEffect(() => { 
+    setPage(1); 
+  }, [debouncedSearch, typeFilter, categoryFilter, fromDate, toDate]);
+
   // Form state
   const [formData, setFormData] = useState<CreateRecordPayload>({
     title: '',
@@ -75,7 +89,15 @@ export default function RecordsPage() {
 
   // Fetch records with search and date range
   const { data, isLoading, error } = useQuery({
-    queryKey: ['records', { type: typeFilter, category: categoryFilter, search: debouncedSearch, fromDate, toDate, page, limit: 10 }],
+    queryKey: queryKeys.records.list({ 
+      type: typeFilter || undefined, 
+      category: categoryFilter || undefined, 
+      search: debouncedSearch || undefined, 
+      fromDate, 
+      toDate, 
+      page, 
+      limit: 10 
+    }),
     queryFn: () => getRecords({
       type: typeFilter || undefined,
       category: categoryFilter || undefined,
@@ -85,18 +107,36 @@ export default function RecordsPage() {
       page,
       limit: 10,
     }),
+    staleTime: 30 * 1000, // 30 seconds - shorter for records to show updates quickly
+    refetchOnWindowFocus: true, // Enable refetch on focus for records
   });
 
   // Create mutation
   const createMutation = useMutation({
     mutationFn: createRecord,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['records'] });
+      // Invalidate all records queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.records.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      
+      // Force refetch the current query
+      queryClient.refetchQueries({ 
+        queryKey: queryKeys.records.list({ 
+          type: typeFilter || undefined, 
+          category: categoryFilter || undefined, 
+          search: debouncedSearch || undefined, 
+          fromDate, 
+          toDate, 
+          page, 
+          limit: 10 
+        })
+      });
+      
       toast.success('Record created successfully');
       setShowCreateModal(false);
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       toast.error(error.response?.data?.message || 'Failed to create record');
     },
   });
@@ -106,13 +146,29 @@ export default function RecordsPage() {
     mutationFn: ({ id, data }: { id: string; data: Partial<CreateRecordPayload> }) =>
       updateRecord(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['records'] });
+      // Invalidate all records queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.records.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      
+      // Force refetch the current query
+      queryClient.refetchQueries({ 
+        queryKey: queryKeys.records.list({ 
+          type: typeFilter || undefined, 
+          category: categoryFilter || undefined, 
+          search: debouncedSearch || undefined, 
+          fromDate, 
+          toDate, 
+          page, 
+          limit: 10 
+        })
+      });
+      
       toast.success('Record updated successfully');
       setShowEditModal(false);
       setSelectedRecord(null);
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       toast.error(error.response?.data?.message || 'Failed to update record');
     },
   });
@@ -121,12 +177,28 @@ export default function RecordsPage() {
   const deleteMutation = useMutation({
     mutationFn: deleteRecord,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['records'] });
+      // Invalidate all records queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.records.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      
+      // Force refetch the current query
+      queryClient.refetchQueries({ 
+        queryKey: queryKeys.records.list({ 
+          type: typeFilter || undefined, 
+          category: categoryFilter || undefined, 
+          search: debouncedSearch || undefined, 
+          fromDate, 
+          toDate, 
+          page, 
+          limit: 10 
+        })
+      });
+      
       toast.success('Record deleted successfully');
       setShowDeleteModal(false);
       setSelectedRecord(null);
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       toast.error(error.response?.data?.message || 'Failed to delete record');
     },
   });
@@ -147,10 +219,17 @@ export default function RecordsPage() {
       toast.error('Please fill all required fields');
       return;
     }
-    createMutation.mutate(formData);
+    
+    // Ensure date is in proper format
+    const recordData = {
+      ...formData,
+      date: formData.date // Keep as YYYY-MM-DD format, backend will handle conversion
+    };
+    
+    createMutation.mutate(recordData);
   };
 
-  const handleEdit = (record: any) => {
+  const handleEdit = (record: FinancialRecord) => {
     setSelectedRecord(record);
     setFormData({
       title: record.title,
@@ -165,10 +244,17 @@ export default function RecordsPage() {
 
   const handleUpdate = () => {
     if (!selectedRecord) return;
-    updateMutation.mutate({ id: selectedRecord._id, data: formData });
+    
+    // Ensure date is in proper format
+    const recordData = {
+      ...formData,
+      date: formData.date // Keep as YYYY-MM-DD format, backend will handle conversion
+    };
+    
+    updateMutation.mutate({ id: selectedRecord._id, data: recordData });
   };
 
-  const handleDelete = (record: any) => {
+  const handleDelete = (record: FinancialRecord) => {
     setSelectedRecord(record);
     setShowDeleteModal(true);
   };
@@ -218,7 +304,7 @@ export default function RecordsPage() {
 
       queryClient.invalidateQueries({ queryKey: ['records'] });
       toast.success('Attachment uploaded successfully');
-    } catch (error: any) {
+    } catch (error: ApiError) {
       toast.error(error.response?.data?.message || 'Failed to upload attachment');
     } finally {
       setUploadingAttachment(false);
@@ -241,15 +327,41 @@ export default function RecordsPage() {
         title="Financial Records"
         subtitle="Manage your income and expenses"
         action={
-          isAdmin ? (
+          <div className="flex gap-2">
+            {/* Manual refresh button */}
             <button
-              onClick={() => setShowCreateModal(true)}
-              className="btn-primary flex items-center gap-2"
+              onClick={() => {
+                queryClient.invalidateQueries({ queryKey: queryKeys.records.all });
+                queryClient.refetchQueries({ 
+                  queryKey: queryKeys.records.list({ 
+                    type: typeFilter || undefined, 
+                    category: categoryFilter || undefined, 
+                    search: debouncedSearch || undefined, 
+                    fromDate, 
+                    toDate, 
+                    page, 
+                    limit: 10 
+                  })
+                });
+              }}
+              className="btn-secondary flex items-center gap-2"
+              title="Refresh records"
             >
-              <Plus className="w-4 h-4" />
-              Add Record
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
             </button>
-          ) : undefined
+            {isAdmin && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Record
+              </button>
+            )}
+          </div>
         }
       />
 
@@ -378,7 +490,7 @@ export default function RecordsPage() {
         ) : (
           <>
             <div className="space-y-3">
-              {records.map((record: any) => (
+              {records.map((record: FinancialRecord) => (
                 <div
                   key={record._id}
                   className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"

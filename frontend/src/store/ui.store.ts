@@ -52,7 +52,7 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: STORAGE_KEYS.THEME,
-      partialPersist: (state) => ({
+      partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
       }),
     }

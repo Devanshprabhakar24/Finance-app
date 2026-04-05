@@ -12,8 +12,10 @@ import cloudinary from 'cloudinary';
  */
 const verifyStartup = async () => {
   // 1. MongoDB ping
-  await mongoose.connection.db.admin().ping();
-  logger.info('✅ MongoDB: healthy');
+  if (mongoose.connection.db) {
+    await mongoose.connection.db.admin().ping();
+    logger.info('✅ MongoDB: healthy');
+  }
 
   // 2. Redis ping (if configured)
   const redis = getRedisClient();

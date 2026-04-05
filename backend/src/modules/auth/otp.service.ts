@@ -97,48 +97,20 @@ export const verifyOtp = async (
       throw new ValidationError('Invalid or expired OTP');
     }
 
-    // Check if OTP is locked due to too many failed attempts
-    if (otpRecord.lockedUntil && new Date() < otpRecord.lockedUntil) {
-      const retryAfterSeconds = Math.ceil((otpRecord.lockedUntil.getTime() - Date.now()) / 1000);
-      throw new TooManyAttemptsError(
-        `OTP is locked due to too many failed attempts. Try again in ${Math.ceil(retryAfterSeconds / 60)} minutes`,
-        retryAfterSeconds
-      );
-    }
-
     // Check if OTP has expired
     if (new Date() > otpRecord.expiresAt) {
       throw new ValidationError('OTP has expired');
-    }
-
-    // Check if max attempts exceeded (should be caught by lockedUntil, but double-check)
-    if (otpRecord.attempts >= env.otp.maxAttempts) {
-      throw new TooManyAttemptsError(
-        `Maximum OTP verification attempts (${env.otp.maxAttempts}) exceeded`
-      );
     }
 
     // Verify OTP
     const isValid = await bcrypt.compare(rawOtp, otpRecord.otp);
 
     if (!isValid) {
-      // Increment attempts
+      // Just increment attempts but don't lock
       otpRecord.attempts += 1;
-
-      // Lock OTP after 3 failed attempts for 30 minutes
-      if (otpRecord.attempts >= 3) {
-        otpRecord.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-        await otpRecord.save();
-        throw new TooManyAttemptsError(
-          'Too many failed attempts. OTP locked for 30 minutes',
-          30 * 60 // 30 minutes in seconds
-        );
-      }
-
       await otpRecord.save();
-      throw new ValidationError(
-        `Invalid OTP. ${env.otp.maxAttempts - otpRecord.attempts} attempts remaining`
-      );
+      
+      throw new ValidationError('Invalid OTP. Please try again.');
     }
 
     // Mark OTP as used

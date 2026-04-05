@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
- * Debounce hook - delays updating value until after delay
- * Useful for search inputs to avoid excessive API calls
+ * Custom hook for debouncing values
+ * @param value - Value to debounce
+ * @param delay - Delay in milliseconds
+ * @returns Debounced value
  */
-export function useDebounce<T>(value: T, delay: number = 300): T {
+export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {

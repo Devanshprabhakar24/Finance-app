@@ -11,6 +11,7 @@ import {
   updateRoleSchema,
   updateStatusSchema,
   changePasswordSchema,
+  changePasswordWithOtpSchema,
 } from './user.schema';
 
 const router = Router();
@@ -36,6 +37,10 @@ router.get('/me', userController.getMyProfile);
 router.patch('/me', validateBody(updateProfileSchema), userController.updateMyProfile);
 router.post('/me/avatar', upload.single('avatar'), userController.uploadAvatar);
 router.patch('/me/change-password', validateBody(changePasswordSchema), userController.changePassword);
+
+// Password change with OTP
+router.post('/me/request-password-change-otp', userController.requestPasswordChangeOtp);
+router.patch('/me/change-password-with-otp', validateBody(changePasswordWithOtpSchema), userController.changePasswordWithOtp);
 
 // ── Admin-only user management ──────────────────────────────────────────────
 

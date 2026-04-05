@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getSummary, getCategoryBreakdown, getMonthlyTrends, getRecentTransactions } from '@/api/dashboard.api';
-import { useState } from 'react';
+import { queryKeys } from '@/api/queryClient';
+import { useState, Suspense, lazy } from 'react';
 import { usePermission } from '@/hooks/usePermission';
 import { 
   TrendingUp, 
@@ -17,6 +18,21 @@ import {
 import { formatCurrency } from '@/utils/format';
 import { useAuthStore } from '@/store/auth.store';
 
+interface FinancialRecord {
+  _id: string;
+  title: string;
+  amount: number;
+  type: 'INCOME' | 'EXPENSE';
+  category: string;
+  date: string;
+  createdBy?: {
+    name: string;
+  };
+}
+
+// Lazy load chart components for better performance
+const LazyBarChart = lazy(() => import('@/components/charts/LazyBarChart'));
+
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const { can } = usePermission();
@@ -28,26 +44,30 @@ export default function DashboardPage() {
 
   // Fetch dashboard data with date range
   const { data: summaryData, isLoading: summaryLoading } = useQuery({
-    queryKey: ['dashboard-summary', fromDate, toDate],
+    queryKey: queryKeys.dashboard.summary(fromDate ? new Date(fromDate).getFullYear() : undefined),
     queryFn: () => getSummary({ from: fromDate || undefined, to: toDate || undefined }),
+    staleTime: 5 * 60 * 1000, // 5 minutes - changes only after record mutations
   });
 
   // Only fetch analytics data for ANALYST and ADMIN
   const { data: categoryData, isLoading: categoryLoading } = useQuery({
-    queryKey: ['dashboard-categories', fromDate, toDate],
+    queryKey: queryKeys.dashboard.categories(fromDate ? new Date(fromDate).getFullYear() : undefined),
     queryFn: () => getCategoryBreakdown({ from: fromDate || undefined, to: toDate || undefined }),
     enabled: canViewAnalytics,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: trendsData, isLoading: trendsLoading } = useQuery({
-    queryKey: ['dashboard-trends'],
+    queryKey: queryKeys.dashboard.trends(),
     queryFn: () => getMonthlyTrends(),
     enabled: canViewAnalytics,
+    staleTime: 30 * 60 * 1000, // 30 minutes - changes at most once per month
   });
 
   const { data: recentData, isLoading: recentLoading } = useQuery({
-    queryKey: ['dashboard-recent'],
+    queryKey: queryKeys.dashboard.recent(),
     queryFn: () => getRecentTransactions(5),
+    staleTime: 60 * 1000, // 1 minute - admin may create records
   });
 
   const summary = summaryData?.data || {
@@ -118,7 +138,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 cv-auto">
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
@@ -194,7 +214,7 @@ export default function DashboardPage() {
 
       {/* Analytics Section - Only for ANALYST and ADMIN */}
       {canViewAnalytics && (
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6 cv-auto">
           {/* Monthly Trends */}
           <div className="card">
             <div className="flex items-center gap-2 mb-4">
@@ -301,7 +321,7 @@ export default function DashboardPage() {
           <p className="text-center text-slate-500 dark:text-slate-400 py-12">No recent transactions</p>
         ) : (
           <div className="space-y-3">
-            {recentRecords.map((record: any) => (
+            {recentRecords.map((record: FinancialRecord) => (
               <div key={record._id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${

@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../modules/users/user.model';
 import { env } from '../config/env';
 import { UnauthorizedError } from './errorHandler';
 import { asyncHandler } from '../utils/asyncHandler';
+import { getCachedUser } from '../utils/userCache';
 
 interface JwtPayload {
   userId: string;
@@ -12,7 +12,7 @@ interface JwtPayload {
 }
 
 /**
- * JWT authentication middleware
+ * JWT authentication middleware (Section 3.1: uses user cache)
  * Verifies JWT token and attaches user to request
  */
 export const authenticate = asyncHandler(
@@ -30,8 +30,8 @@ export const authenticate = asyncHandler(
       // Verify token
       const decoded = jwt.verify(token, env.jwt.accessSecret) as JwtPayload;
 
-      // Find user
-      const user = await User.findById(decoded.userId).select('-passwordHash');
+      // Find user using cache (Section 3.1)
+      const user = await getCachedUser(decoded.userId);
 
       if (!user) {
         throw new UnauthorizedError('User not found');
@@ -43,7 +43,7 @@ export const authenticate = asyncHandler(
       }
 
       // Attach user to request
-      req.user = user;
+      req.user = user as any;
       next();
     } catch (error) {
       if (error instanceof jwt.JsonWebTokenError) {

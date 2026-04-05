@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { Readable } from 'stream';
 import { env } from './env';
 import { logger } from '../utils/logger';
 
@@ -12,7 +13,8 @@ cloudinary.config({
 });
 
 /**
- * Upload file buffer to Cloudinary
+ * Upload file buffer to Cloudinary with streaming (Section 2.4)
+ * Streams the buffer to avoid additional memory allocation
  * @param buffer - File buffer
  * @param folder - Cloudinary folder path
  * @param resourceType - Resource type (image, raw, video, auto)
@@ -35,6 +37,7 @@ export const uploadToCloudinary = (
         resource_type: resourceType,
         allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'webp'],
         max_file_size: 5 * 1024 * 1024, // 5MB
+        timeout: 60000,  // Add explicit timeout
       },
       (error, result) => {
         if (error) {
@@ -51,7 +54,11 @@ export const uploadToCloudinary = (
       }
     );
 
-    uploadStream.end(buffer);
+    // Convert Buffer to Readable stream — avoids second memory allocation
+    const readable = new Readable();
+    readable.push(buffer);
+    readable.push(null);
+    readable.pipe(uploadStream);
   });
 };
 

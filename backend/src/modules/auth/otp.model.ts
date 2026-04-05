@@ -9,6 +9,7 @@ export enum OtpPurpose {
   REGISTER = 'REGISTER',
   LOGIN = 'LOGIN',
   RESET = 'RESET',
+  CHANGE_PASSWORD = 'CHANGE_PASSWORD',
 }
 
 export interface IOtp extends Document {

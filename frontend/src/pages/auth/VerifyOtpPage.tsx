@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { verifyOtp, resendOtp } from '@/api/auth.api';
 import { OtpInput } from '@/components/auth/OtpInput';
 import { useAuthStore } from '@/store/auth.store';
-import { ArrowLeft, Shield, Mail, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Shield, Mail, MessageSquare, Loader2 } from 'lucide-react';
 import { OTP_CONFIG } from '@/utils/constants';
 import toast from 'react-hot-toast';
 
@@ -136,13 +136,23 @@ export default function VerifyOtpPage() {
                 <div>
                   <p className="text-sm text-blue-300 font-medium">Email OTP</p>
                   <p className="text-xs text-blue-400 mt-1">Check your inbox for the verification code</p>
+                  {process.env.NODE_ENV === 'development' && (
+                    <p className="text-xs text-yellow-400 mt-1 font-medium">
+                      💡 Test Mode: Use "123456"
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-start space-x-3 mt-3 pt-3 border-t border-blue-500/20">
                 <MessageSquare className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-sm text-blue-300 font-medium">SMS OTP (Test Mode)</p>
-                  <p className="text-xs text-blue-400 mt-1">Use test code: <span className="font-mono font-bold text-blue-300">123456</span></p>
+                  <p className="text-sm text-blue-300 font-medium">SMS OTP</p>
+                  <p className="text-xs text-blue-400 mt-1">Check your phone for the verification code</p>
+                  {process.env.NODE_ENV === 'development' && (
+                    <p className="text-xs text-yellow-400 mt-1 font-medium">
+                      💡 Test Mode: Use "123456"
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

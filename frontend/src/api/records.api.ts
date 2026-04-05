@@ -28,14 +28,6 @@ export async function getRecords(filters?: RecordFilters): Promise<RecordListRes
 }
 
 /**
- * Get single record by ID
- */
-export async function getRecord(id: string): Promise<RecordResponse> {
-  const response = await apiClient.get<RecordResponse>(`/records/${id}`);
-  return response.data;
-}
-
-/**
  * Create new record
  */
 export async function createRecord(data: CreateRecordPayload): Promise<RecordResponse> {
@@ -59,24 +51,4 @@ export async function updateRecord(
  */
 export async function deleteRecord(id: string): Promise<void> {
   await apiClient.delete(`/records/${id}`);
-}
-
-/**
- * Upload attachment to Cloudinary
- */
-export async function uploadAttachment(file: File): Promise<{ url: string }> {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const response = await apiClient.post<{ data: { url: string } }>(
-    '/records/upload',
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }
-  );
-
-  return response.data.data;
 }

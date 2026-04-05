@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Phone, CheckCircle, ArrowLeft, Shield } from 'lucide-react';
+import { Mail, Phone, CheckCircle, ArrowLeft, Shield, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { z } from 'zod';
+import { useDebounce } from '@/hooks/useDebounce';
+import { checkAvailability } from '@/api/auth';
 
 const emailSchema = z.string().email('Invalid email format');
 const phoneSchema = z.string().regex(/^\+[1-9]\d{1,14}$/, 'Phone must be in E.164 format (e.g., +911234567890)');
@@ -26,6 +28,15 @@ export default function RegisterPage() {
   const [phoneError, setPhoneError] = useState('');
   const [confirmPhoneError, setConfirmPhoneError] = useState('');
 
+  // Availability states
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+  const [phoneAvailable, setPhoneAvailable] = useState<boolean | null>(null);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+
+  // Debounced values for API calls
+  const debouncedEmail = useDebounce(email, 800);
+  const debouncedPhone = useDebounce(phone, 800);
+
   // Live email validation
   const validateEmail = (value: string) => {
     try {
@@ -34,6 +45,7 @@ export default function RegisterPage() {
       return true;
     } catch (error: any) {
       setEmailError(error.errors[0]?.message || 'Invalid email');
+      setEmailAvailable(null); // Reset availability when invalid
       return false;
     }
   };
@@ -55,6 +67,7 @@ export default function RegisterPage() {
       return true;
     } catch (error: any) {
       setPhoneError(error.errors[0]?.message || 'Invalid phone');
+      setPhoneAvailable(null); // Reset availability when invalid
       return false;
     }
   };
@@ -68,9 +81,57 @@ export default function RegisterPage() {
     return true;
   };
 
+  // Check availability when debounced values change
+  useEffect(() => {
+    const checkEmailAndPhoneAvailability = async () => {
+      if (!debouncedEmail && !debouncedPhone) return;
+      
+      // Only check if values are valid
+      const emailValid = debouncedEmail ? validateEmail(debouncedEmail) : true;
+      const phoneValid = debouncedPhone ? validatePhone(debouncedPhone) : true;
+      
+      if (!emailValid && !phoneValid) return;
+
+      try {
+        setCheckingAvailability(true);
+        const result = await checkAvailability(
+          emailValid ? debouncedEmail : undefined,
+          phoneValid ? debouncedPhone : undefined
+        );
+        
+        if (debouncedEmail && emailValid) {
+          setEmailAvailable(result.emailAvailable);
+        }
+        
+        if (debouncedPhone && phoneValid) {
+          setPhoneAvailable(result.phoneAvailable);
+        }
+      } catch (error: any) {
+        console.error('Availability check failed:', error);
+        
+        // Handle rate limiting specifically
+        if (error?.response?.status === 429) {
+          toast.error('Too many requests. Please slow down and try again.');
+        }
+        
+        // Don't show other errors to user, just reset availability
+        setEmailAvailable(null);
+        setPhoneAvailable(null);
+      } finally {
+        setCheckingAvailability(false);
+      }
+    };
+
+    checkEmailAndPhoneAvailability();
+  }, [debouncedEmail, debouncedPhone]);
+
   const handleValidateEmail = () => {
     if (!validateEmail(email) || !validateConfirmEmail(confirmEmail)) {
       toast.error('Please enter valid matching emails');
+      return;
+    }
+    if (emailAvailable === false) {
+      toast.error('Email is already registered');
       return;
     }
     setEmailValidated(true);
@@ -80,6 +141,10 @@ export default function RegisterPage() {
   const handleValidatePhone = () => {
     if (!validatePhone(phone) || !validateConfirmPhone(confirmPhone)) {
       toast.error('Please enter valid matching phone numbers');
+      return;
+    }
+    if (phoneAvailable === false) {
+      toast.error('Phone number is already registered');
       return;
     }
     setPhoneValidated(true);
@@ -138,6 +203,7 @@ export default function RegisterPage() {
                 <Mail className="w-5 h-5 text-sky-400" />
                 <h2 className="text-lg font-semibold text-white">Email Address</h2>
                 {emailValidated && <CheckCircle className="w-5 h-5 text-green-400 ml-auto" />}
+                {checkingAvailability && email && <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin ml-auto" />}
               </div>
 
               <div className="space-y-4">
@@ -145,11 +211,21 @@ export default function RegisterPage() {
                   <label className="block text-sm font-medium text-slate-300 mb-2">Email</label>
                   <input
                     type="email"
+                    id="email-input"
+                    name="email"
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => {
-                      setEmail(e.target.value);
-                      validateEmail(e.target.value);
+                      const newValue = e.target.value;
+                      setEmail(newValue);
+                      validateEmail(newValue);
                       if (emailValidated) setEmailValidated(false);
+                      // Reset availability when user types
+                      setEmailAvailable(null);
+                      // Prevent accidental sync with confirm field
+                      if (newValue !== confirmEmail && confirmEmail === email) {
+                        setConfirmEmail('');
+                      }
                     }}
                     onBlur={(e) => validateEmail(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -157,12 +233,27 @@ export default function RegisterPage() {
                     disabled={emailValidated}
                   />
                   {emailError && <p className="text-sm text-red-400 mt-2">{emailError}</p>}
+                  {!emailError && emailAvailable === false && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <AlertCircle className="w-4 h-4 text-red-400" />
+                      <p className="text-sm text-red-400">This email is already registered</p>
+                    </div>
+                  )}
+                  {!emailError && emailAvailable === true && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <p className="text-sm text-green-400">Email is available</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">Confirm Email</label>
                   <input
                     type="email"
+                    id="confirm-email-input"
+                    name="confirmEmail"
+                    autoComplete="new-password"
                     value={confirmEmail}
                     onChange={(e) => {
                       setConfirmEmail(e.target.value);
@@ -170,8 +261,14 @@ export default function RegisterPage() {
                       if (emailValidated) setEmailValidated(false);
                     }}
                     onBlur={(e) => validateConfirmEmail(e.target.value)}
+                    onFocus={(e) => {
+                      // Clear if it matches the main field (likely autofilled)
+                      if (e.target.value === email && email !== '') {
+                        setConfirmEmail('');
+                      }
+                    }}
                     className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="john@example.com"
+                    placeholder="Confirm your email"
                     disabled={emailValidated}
                   />
                   {confirmEmailError && <p className="text-sm text-red-400 mt-2">{confirmEmailError}</p>}
@@ -180,10 +277,10 @@ export default function RegisterPage() {
                 {!emailValidated && (
                   <button
                     onClick={handleValidateEmail}
-                    disabled={!email || !confirmEmail || !!emailError || !!confirmEmailError}
+                    disabled={!email || !confirmEmail || !!emailError || !!confirmEmailError || emailAvailable === false || checkingAvailability}
                     className="w-full py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-sky-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Validate Email
+                    {checkingAvailability ? 'Checking...' : 'Validate Email'}
                   </button>
                 )}
 
@@ -193,6 +290,7 @@ export default function RegisterPage() {
                       setEmailValidated(false);
                       setEmail('');
                       setConfirmEmail('');
+                      setEmailAvailable(null);
                     }}
                     className="w-full py-3 bg-slate-700 text-white rounded-xl font-semibold hover:bg-slate-600 transition-all duration-300"
                   >
@@ -208,6 +306,7 @@ export default function RegisterPage() {
                 <Phone className="w-5 h-5 text-sky-400" />
                 <h2 className="text-lg font-semibold text-white">Phone Number</h2>
                 {phoneValidated && <CheckCircle className="w-5 h-5 text-green-400 ml-auto" />}
+                {checkingAvailability && phone && <div className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin ml-auto" />}
               </div>
 
               <div className="space-y-4">
@@ -215,11 +314,21 @@ export default function RegisterPage() {
                   <label className="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
                   <input
                     type="tel"
+                    id="phone-input"
+                    name="phone"
+                    autoComplete="tel"
                     value={phone}
                     onChange={(e) => {
-                      setPhone(e.target.value);
-                      validatePhone(e.target.value);
+                      const newValue = e.target.value;
+                      setPhone(newValue);
+                      validatePhone(newValue);
                       if (phoneValidated) setPhoneValidated(false);
+                      // Reset availability when user types
+                      setPhoneAvailable(null);
+                      // Prevent accidental sync with confirm field
+                      if (newValue !== confirmPhone && confirmPhone === phone) {
+                        setConfirmPhone('');
+                      }
                     }}
                     onBlur={(e) => validatePhone(e.target.value)}
                     className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -227,6 +336,18 @@ export default function RegisterPage() {
                     disabled={phoneValidated || !emailValidated}
                   />
                   {phoneError && <p className="text-sm text-red-400 mt-2">{phoneError}</p>}
+                  {!phoneError && phoneAvailable === false && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <AlertCircle className="w-4 h-4 text-red-400" />
+                      <p className="text-sm text-red-400">This phone number is already registered</p>
+                    </div>
+                  )}
+                  {!phoneError && phoneAvailable === true && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <p className="text-sm text-green-400">Phone number is available</p>
+                    </div>
+                  )}
                   <p className="text-xs text-slate-500 mt-2">Format: +[country code][number] (e.g., +911234567890)</p>
                 </div>
 
@@ -234,6 +355,9 @@ export default function RegisterPage() {
                   <label className="block text-sm font-medium text-slate-300 mb-2">Confirm Phone Number</label>
                   <input
                     type="tel"
+                    id="confirm-phone-input"
+                    name="confirmPhone"
+                    autoComplete="new-password"
                     value={confirmPhone}
                     onChange={(e) => {
                       setConfirmPhone(e.target.value);
@@ -241,8 +365,14 @@ export default function RegisterPage() {
                       if (phoneValidated) setPhoneValidated(false);
                     }}
                     onBlur={(e) => validateConfirmPhone(e.target.value)}
+                    onFocus={(e) => {
+                      // Clear if it matches the main field (likely autofilled)
+                      if (e.target.value === phone && phone !== '') {
+                        setConfirmPhone('');
+                      }
+                    }}
                     className="w-full px-4 py-3 bg-zinc-800/50 border border-zinc-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="+911234567890"
+                    placeholder="Confirm your phone number"
                     disabled={phoneValidated || !emailValidated}
                   />
                   {confirmPhoneError && <p className="text-sm text-red-400 mt-2">{confirmPhoneError}</p>}
@@ -251,10 +381,10 @@ export default function RegisterPage() {
                 {!phoneValidated && emailValidated && (
                   <button
                     onClick={handleValidatePhone}
-                    disabled={!phone || !confirmPhone || !!phoneError || !!confirmPhoneError}
+                    disabled={!phone || !confirmPhone || !!phoneError || !!confirmPhoneError || phoneAvailable === false || checkingAvailability}
                     className="w-full py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-sky-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Validate Phone
+                    {checkingAvailability ? 'Checking...' : 'Validate Phone'}
                   </button>
                 )}
 
@@ -264,6 +394,7 @@ export default function RegisterPage() {
                       setPhoneValidated(false);
                       setPhone('');
                       setConfirmPhone('');
+                      setPhoneAvailable(null);
                     }}
                     className="w-full py-3 bg-slate-700 text-white rounded-xl font-semibold hover:bg-slate-600 transition-all duration-300"
                   >

@@ -2,7 +2,8 @@ import { Router } from 'express';
 import * as authController from './auth.controller';
 import { validateBody } from '../../middleware/validate';
 import { authenticate } from '../../middleware/authenticate';
-import { authLimiter, otpLimiter } from '../../middleware/rateLimiter';
+import { authLimiter, otpLimiter, availabilityLimiter } from '../../middleware/rateLimiter';
+import { noCache } from '../../middleware/cacheControl';
 import { userRegistrationSchema } from '../users/user.schema';
 import {
   loginSchema,
@@ -15,12 +16,22 @@ import {
 
 const router = Router();
 
+// Section 2.1: No caching for auth routes
+router.use(noCache);
+
 // Public routes with rate limiting
 router.post(
   '/register',
   authLimiter,
   validateBody(userRegistrationSchema),
   authController.register
+);
+
+// Check email/phone availability
+router.post(
+  '/check-availability',
+  availabilityLimiter,
+  authController.checkAvailability
 );
 
 router.post(
@@ -69,6 +80,11 @@ router.post(
   validateBody(resetPasswordSchema),
   authController.resetPassword
 );
+
+// Test email endpoint (development only)
+if (process.env.NODE_ENV !== 'production') {
+  router.post('/test-email', authController.testEmail);
+}
 
 // Protected routes
 router.post('/logout', authenticate, authController.logout);

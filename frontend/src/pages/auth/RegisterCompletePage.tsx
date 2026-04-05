@@ -182,6 +182,11 @@ export default function RegisterCompletePage() {
             <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700">
               <p className="text-xs text-slate-400 text-center">
                 After clicking, we'll send OTP codes to your email and phone for verification
+                {process.env.NODE_ENV === 'development' && (
+                  <span className="block text-yellow-400 font-medium mt-1">
+                    💡 Test Mode: You can use "123456" as OTP
+                  </span>
+                )}
               </p>
             </div>
           </form>

@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getCategoryBreakdown, getMonthlyTrends } from '@/api/dashboard.api';
+import { queryKeys } from '@/api/queryClient';
 import { useAuthStore } from '@/store/auth.store';
+import { Suspense, lazy } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -16,21 +18,33 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
 
+interface CategoryData {
+  category: string;
+  total: number;
+  type: 'INCOME' | 'EXPENSE';
+  count: number;
+}
+
+// Lazy load chart components for better performance
+const LazyBarChart = lazy(() => import('@/components/charts/LazyBarChart'));
+
 export default function AnalyticsPage() {
   const { user } = useAuthStore();
   const isAnalystOrAdmin = user?.role === 'ANALYST' || user?.role === 'ADMIN';
 
   // Fetch analytics data
   const { data: categoryData, isLoading: categoryLoading, error: categoryError } = useQuery({
-    queryKey: ['category-breakdown'],
+    queryKey: queryKeys.dashboard.categories(),
     queryFn: getCategoryBreakdown,
     enabled: isAnalystOrAdmin,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: trendsData, isLoading: trendsLoading, error: trendsError } = useQuery({
-    queryKey: ['monthly-trends'],
+    queryKey: queryKeys.dashboard.trends(),
     queryFn: getMonthlyTrends,
     enabled: isAnalystOrAdmin,
+    staleTime: 30 * 60 * 1000, // 30 minutes - changes at most once per month
   });
 
   if (!isAnalystOrAdmin) {
@@ -134,7 +148,7 @@ export default function AnalyticsPage() {
   }
 
   // Render donut chart (CSS-based)
-  const renderDonutChart = (data: any[], colors: string[], type: 'income' | 'expense') => {
+  const renderDonutChart = (data: CategoryData[], colors: string[], type: 'income' | 'expense') => {
     const total = data.reduce((sum, item) => sum + item.total, 0);
     if (total === 0) return null;
 
@@ -207,7 +221,7 @@ export default function AnalyticsPage() {
       <PageHeader title="Analytics" subtitle="Insights and trends" />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 cv-auto">
         {/* Total Income */}
         <div className="card bg-gradient-to-br from-success-50 to-success-100 dark:from-success-900/20 dark:to-success-800/20 border-success-200 dark:border-success-800">
           <div className="flex items-start justify-between mb-4">

@@ -9,17 +9,17 @@ import { API_CONFIG } from '@/utils/constants';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Stale time - how long data is considered fresh
-      staleTime: API_CONFIG.STALE_TIME.DEFAULT,
+      // Stale time - how long data is considered fresh (5 minutes for better performance)
+      staleTime: 5 * 60 * 1000, // 5 minutes
 
       // Cache time - how long unused data stays in cache
-      gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
 
       // Retry failed requests
-      retry: API_CONFIG.RETRY_ATTEMPTS, // 1 retry
+      retry: 1, // 1 retry
 
-      // Refetch on window focus
-      refetchOnWindowFocus: true,
+      // Refetch on window focus (disabled for better performance)
+      refetchOnWindowFocus: false,
 
       // Refetch on reconnect
       refetchOnReconnect: true,
@@ -30,11 +30,6 @@ export const queryClient = new QueryClient({
     mutations: {
       // Retry failed mutations
       retry: 0, // Don't retry mutations by default
-
-      // Mutation error handling
-      onError: (error) => {
-        console.error('Mutation error:', error);
-      },
     },
   },
 });

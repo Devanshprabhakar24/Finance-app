@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Lock, ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Lock, ArrowLeft, Loader2, Eye, EyeOff, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient from '@/api/axios';
 
@@ -31,6 +31,50 @@ export default function ResetPasswordPage() {
     },
   });
 
+  // Test email function (development only)
+  const testEmailMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await apiClient.post('/auth/test-email', { email });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Test email sent! Check your inbox.');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to send test email');
+    },
+  });
+
+  // Request OTP for password reset
+  const requestOtpMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await apiClient.post('/auth/forgot-password', { identifier: email });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('OTP sent to your email!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to send OTP');
+    },
+  });
+
+  const handleTestEmail = () => {
+    if (!identifier.includes('@')) {
+      toast.error('Please enter a valid email address to test');
+      return;
+    }
+    testEmailMutation.mutate(identifier);
+  };
+
+  const handleRequestOtp = () => {
+    if (!identifier.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    requestOtpMutation.mutate(identifier);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -51,6 +95,13 @@ export default function ResetPasswordPage() {
 
     if (newPassword.length < 8) {
       toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    // Check password complexity
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      toast.error('Password must contain uppercase, lowercase, number, and special character');
       return;
     }
 
@@ -103,6 +154,41 @@ export default function ResetPasswordPage() {
                 className="input-field"
                 disabled={resetPasswordMutation.isPending}
               />
+              {/* Test Email Button (Development Only) */}
+              {process.env.NODE_ENV === 'development' && identifier.includes('@') && (
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleTestEmail}
+                    disabled={testEmailMutation.isPending}
+                    className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                  >
+                    {testEmailMutation.isPending ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <>
+                        <Mail className="w-3 h-3" />
+                        Test Email
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRequestOtp}
+                    disabled={requestOtpMutation.isPending}
+                    className="flex-1 py-2 px-3 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                  >
+                    {requestOtpMutation.isPending ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <>
+                        <Lock className="w-3 h-3" />
+                        Request OTP
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* OTP Input */}
@@ -121,6 +207,11 @@ export default function ResetPasswordPage() {
               />
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Check your email and phone for the OTP code
+                {process.env.NODE_ENV === 'development' && (
+                  <span className="block text-blue-500 font-medium mt-1">
+                    💡 Development Mode: You can use "123456" as test OTP
+                  </span>
+                )}
               </p>
             </div>
 
@@ -148,7 +239,7 @@ export default function ResetPasswordPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Must be at least 8 characters
+                Must be at least 8 characters with uppercase, lowercase, number, and special character (@$!%*?&#)
               </p>
             </div>
 

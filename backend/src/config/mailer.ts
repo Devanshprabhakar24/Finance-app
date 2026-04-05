@@ -56,6 +56,8 @@ export const sendOtpEmail = async (
       ? env.email.brevo.fromEmail
       : env.email.from;
 
+    logger.info(`📧 Sending OTP email to ${to} via ${env.email.service} from ${fromEmail}`);
+
     const subject = `Your Finance Dashboard OTP - ${purpose}`;
     const html = `
       <!DOCTYPE html>
@@ -99,16 +101,16 @@ export const sendOtpEmail = async (
       </html>
     `;
 
-    await transporter.sendMail({
+    const result = await transporter.sendMail({
       from: fromEmail,
       to,
       subject,
       html,
     });
 
-    logger.info(`OTP email sent to ${to} via ${env.email.service}`);
+    logger.info(`✅ OTP email sent successfully to ${to} via ${env.email.service}. MessageId: ${result.messageId}`);
   } catch (error) {
-    logger.error('Failed to send OTP email:', error);
+    logger.error('❌ Failed to send OTP email:', error);
     throw new Error('Failed to send OTP email');
   }
 };

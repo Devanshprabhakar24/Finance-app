@@ -1,10 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
     darkMode: 'class',
-    content: [
-        "./index.html",
-        "./src/**/*.{js,ts,jsx,tsx}",
-    ],
+    content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+    // Remove unused CSS — critical for production bundle size
+    future: {
+        hoverOnlyWhenSupported: true,  // Reduces generated CSS by not adding hover: variants for touch devices
+    },
     theme: {
         extend: {
             colors: {
@@ -84,8 +85,8 @@ export default {
                 },
             },
             fontFamily: {
-                sans: ['Inter', 'system-ui', 'sans-serif'],
-                mono: ['JetBrains Mono', 'monospace'],
+                sans: ['Inter Variable', 'Inter', 'system-ui', 'sans-serif'],
+                mono: ['JetBrains Mono Variable', 'JetBrains Mono', 'monospace'],
             },
             backgroundImage: {
                 'gradient-primary': 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',

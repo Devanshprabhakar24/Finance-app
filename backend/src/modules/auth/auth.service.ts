@@ -6,6 +6,7 @@ import { generateAndSendOtp, verifyOtp } from './otp.service';
 import { OtpPurpose } from './otp.model';
 import { env } from '../../config/env';
 import { logger } from '../../utils/logger';
+import { invalidateUserCache } from '../../utils/userCache';
 import {
   ConflictError,
   UnauthorizedError,
@@ -75,6 +76,50 @@ export const registerUser = async (data: UserRegistrationInput): Promise<void> =
     logger.info(`User registered: ${user.email}`);
   } catch (error) {
     logger.error('Registration error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Check email and phone availability
+ * @param email - Email to check
+ * @param phone - Phone to check
+ * @returns Availability status
+ */
+export const checkAvailability = async (
+  email?: string, 
+  phone?: string
+): Promise<{ emailAvailable: boolean; phoneAvailable: boolean }> => {
+  try {
+    const checks = [];
+    
+    if (email) {
+      checks.push(User.findOne({ email }).select('_id'));
+    }
+    
+    if (phone) {
+      checks.push(User.findOne({ phone }).select('_id'));
+    }
+
+    const results = await Promise.all(checks);
+    
+    let emailAvailable = true;
+    let phoneAvailable = true;
+    
+    if (email && results[0]) {
+      emailAvailable = false;
+    }
+    
+    if (phone) {
+      const phoneIndex = email ? 1 : 0;
+      if (results[phoneIndex]) {
+        phoneAvailable = false;
+      }
+    }
+
+    return { emailAvailable, phoneAvailable };
+  } catch (error) {
+    logger.error('Availability check error:', error);
     throw error;
   }
 };
@@ -273,10 +318,15 @@ export const refreshAccessToken = async (
 
 /**
  * Logout user — clears stored refresh token so it cannot be reused
+ * Section 3.1: Invalidates user cache on logout
  * @param userId - User ID
  */
 export const logoutUser = async (userId: string): Promise<void> => {
   await User.findByIdAndUpdate(userId, { $unset: { refreshToken: '' } });
+  
+  // Invalidate cache on logout
+  invalidateUserCache(userId);
+  
   logger.info(`User logged out: ${userId}`);
 };
 

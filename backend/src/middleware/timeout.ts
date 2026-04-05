@@ -6,7 +6,7 @@ import { Request, Response, NextFunction } from 'express';
  * @param ms - Timeout in milliseconds
  */
 export const requestTimeout = (ms: number) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (_req: Request, res: Response, next: NextFunction) => {
     const timeout = setTimeout(() => {
       if (!res.headersSent) {
         res.status(503).json({

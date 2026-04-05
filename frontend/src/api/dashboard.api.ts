@@ -76,11 +76,3 @@ export async function getRecentTransactions(limit: number = 10) {
   });
   return response.data;
 }
-
-/**
- * Get top expense categories
- */
-export async function getTopCategories() {
-  const response = await apiClient.get('/dashboard/top-categories');
-  return response.data;
-}

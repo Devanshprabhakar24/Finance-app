@@ -20,9 +20,34 @@ export const createRecordSchema = z.object({
     .transform((val) => val.trim()),
   date: z
     .string()
-    .datetime('Invalid date format')
-    .refine((date) => new Date(date) <= new Date(), {
+    .refine((date) => {
+      // Accept both YYYY-MM-DD and ISO datetime formats
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      const datetimeRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/;
+      return dateRegex.test(date) || datetimeRegex.test(date);
+    }, 'Invalid date format')
+    .refine((date) => {
+      const inputDate = new Date(date);
+      const today = new Date();
+      
+      // If input is just YYYY-MM-DD, compare dates only
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const todayDateString = today.toISOString().split('T')[0];
+        return date <= todayDateString;
+      }
+      
+      // For datetime strings, allow until end of today
+      today.setHours(23, 59, 59, 999);
+      return inputDate <= today;
+    }, {
       message: 'Date cannot be in the future',
+    })
+    .transform((date) => {
+      // Convert YYYY-MM-DD to ISO datetime string for consistency
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return new Date(date + 'T00:00:00.000Z').toISOString();
+      }
+      return date;
     }),
   notes: z
     .string()

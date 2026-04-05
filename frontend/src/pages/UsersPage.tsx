@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getUsers, updateUser, deleteUser } from '@/api/users.api';
+import { queryKeys } from '@/api/queryClient';
+import { useDebounce } from '@/hooks/useDebounce';
 import type { User } from '@/types/index';
 import { 
   Users, 
@@ -30,16 +32,31 @@ export default function UsersPage() {
   const [editRole, setEditRole] = useState<'ADMIN' | 'ANALYST' | 'VIEWER'>('VIEWER');
   const [editStatus, setEditStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
 
+  // Debounce search input
+  const debouncedSearch = useDebounce(search, 350);
+
+  // Reset page when filters change
+  useEffect(() => { 
+    setPage(1); 
+  }, [debouncedSearch, roleFilter, statusFilter]);
+
   // Fetch users
   const { data, isLoading, error } = useQuery({
-    queryKey: ['users', { search, role: roleFilter, status: statusFilter, page, limit: 10 }],
-    queryFn: () => getUsers({ 
-      search: search || undefined, 
+    queryKey: queryKeys.users.list({ 
+      search: debouncedSearch || undefined, 
       role: roleFilter || undefined, 
       status: statusFilter || undefined, 
       page, 
       limit: 10 
     }),
+    queryFn: () => getUsers({ 
+      search: debouncedSearch || undefined, 
+      role: roleFilter || undefined, 
+      status: statusFilter || undefined, 
+      page, 
+      limit: 10 
+    }),
+    staleTime: 5 * 60 * 1000, // 5 minutes - low change frequency
   });
 
   // Update user mutation
@@ -47,7 +64,7 @@ export default function UsersPage() {
     mutationFn: ({ id, data }: { id: string; data: { role?: string; status?: string } }) =>
       updateUser(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       toast.success('User updated successfully');
       setShowEditModal(false);
       setSelectedUser(null);
@@ -61,7 +78,7 @@ export default function UsersPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteUser(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       toast.success('User deactivated successfully');
       setShowDeleteModal(false);
       setSelectedUser(null);

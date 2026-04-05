@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuthStore } from '@/store/auth.store';
-import { User, Mail, Phone, Shield, Calendar, Edit2, Save, X, Lock, Upload, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, Shield, Calendar, Edit2, Save, X, Lock, Upload, Loader2, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient from '@/api/axios';
 import { formatDate } from '@/utils/format';
+import { requestPasswordChangeOtp, changePasswordWithOtp } from '@/api/users.api';
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
   const { user, setUser } = useAuthStore();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showOtpStep, setShowOtpStep] = useState(false);
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -24,6 +26,7 @@ export default function ProfilePage() {
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
+    otp: '',
   });
 
   // Update profile mutation
@@ -55,6 +58,38 @@ export default function ProfilePage() {
         currentPassword: '',
         newPassword: '',
         confirmPassword: '',
+        otp: '',
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to change password');
+    },
+  });
+
+  // Request OTP for password change
+  const requestOtpMutation = useMutation({
+    mutationFn: requestPasswordChangeOtp,
+    onSuccess: () => {
+      toast.success('OTP sent to your email');
+      setShowOtpStep(true);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to send OTP');
+    },
+  });
+
+  // Change password with OTP
+  const changePasswordWithOtpMutation = useMutation({
+    mutationFn: changePasswordWithOtp,
+    onSuccess: () => {
+      toast.success('Password changed successfully');
+      setIsChangingPassword(false);
+      setShowOtpStep(false);
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+        otp: '',
       });
     },
     onError: (error: any) => {
@@ -112,10 +147,22 @@ export default function ProfilePage() {
       toast.error('Passwords do not match');
       return;
     }
-    changePasswordMutation.mutate({
-      currentPassword: passwordForm.currentPassword,
-      newPassword: passwordForm.newPassword,
-    });
+
+    if (showOtpStep) {
+      // Verify OTP and change password
+      if (!passwordForm.otp) {
+        toast.error('OTP is required');
+        return;
+      }
+      changePasswordWithOtpMutation.mutate({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        otp: passwordForm.otp,
+      });
+    } else {
+      // Request OTP first
+      requestOtpMutation.mutate();
+    }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -372,6 +419,7 @@ export default function ProfilePage() {
                     onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                     className="input-field"
                     placeholder="Enter current password"
+                    disabled={showOtpStep}
                   />
                 </div>
 
@@ -383,6 +431,7 @@ export default function ProfilePage() {
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                     className="input-field"
                     placeholder="Enter new password"
+                    disabled={showOtpStep}
                   />
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     Must be at least 8 characters
@@ -397,18 +446,51 @@ export default function ProfilePage() {
                     onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
                     className="input-field"
                     placeholder="Confirm new password"
+                    disabled={showOtpStep}
                   />
                 </div>
+
+                {showOtpStep && (
+                  <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <KeyRound className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                      <h4 className="font-medium text-sky-900 dark:text-sky-100">Email Verification Required</h4>
+                    </div>
+                    <p className="text-sm text-sky-700 dark:text-sky-300 mb-3">
+                      We've sent a 6-digit OTP to your email address for security verification.
+                      {process.env.NODE_ENV === 'development' && (
+                        <span className="block text-yellow-600 dark:text-yellow-400 font-medium mt-1">
+                          💡 Test Mode: You can use "123456"
+                        </span>
+                      )}
+                    </p>
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-sky-900 dark:text-sky-100">
+                        Enter OTP
+                      </label>
+                      <input
+                        type="text"
+                        value={passwordForm.otp}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, otp: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                        className="input-field"
+                        placeholder="Enter 6-digit OTP"
+                        maxLength={6}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => {
                       setIsChangingPassword(false);
+                      setShowOtpStep(false);
                       setPasswordForm({
                         currentPassword: '',
                         newPassword: '',
                         confirmPassword: '',
+                        otp: '',
                       });
                     }}
                     className="btn-secondary flex-1 flex items-center justify-center gap-2"
@@ -418,18 +500,27 @@ export default function ProfilePage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={changePasswordMutation.isPending}
+                    disabled={requestOtpMutation.isPending || changePasswordWithOtpMutation.isPending}
                     className="btn-primary flex-1 flex items-center justify-center gap-2"
                   >
-                    {changePasswordMutation.isPending ? (
+                    {(requestOtpMutation.isPending || changePasswordWithOtpMutation.isPending) ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Changing...
+                        {showOtpStep ? 'Changing...' : 'Sending OTP...'}
                       </>
                     ) : (
                       <>
-                        <Save className="w-4 h-4" />
-                        Change Password
+                        {showOtpStep ? (
+                          <>
+                            <Save className="w-4 h-4" />
+                            Change Password
+                          </>
+                        ) : (
+                          <>
+                            <KeyRound className="w-4 h-4" />
+                            Send OTP
+                          </>
+                        )}
                       </>
                     )}
                   </button>

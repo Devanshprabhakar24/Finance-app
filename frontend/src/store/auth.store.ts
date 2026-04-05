@@ -17,6 +17,7 @@ interface AuthState {
   accessToken: string | null;
   isAuthenticated: boolean;
   isHydrated: boolean;
+  _hasHydrated: boolean;
 
   // Actions
   setUser: (user: User) => void;
@@ -25,6 +26,7 @@ interface AuthState {
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   setHydrated: () => void;
+  setHasHydrated: (v: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -35,6 +37,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       isAuthenticated: false,
       isHydrated: false,
+      _hasHydrated: false,
 
       // Set user data
       setUser: (user) =>
@@ -75,6 +78,9 @@ export const useAuthStore = create<AuthState>()(
 
       // Set hydrated flag
       setHydrated: () => set({ isHydrated: true }),
+
+      // Set has hydrated flag
+      setHasHydrated: (v) => set({ _hasHydrated: v }),
     }),
     {
       name: STORAGE_KEYS.AUTH, // localStorage key
@@ -86,6 +92,7 @@ export const useAuthStore = create<AuthState>()(
       onRehydrateStorage: () => (state) => {
         // Set hydrated flag after rehydration completes
         state?.setHydrated();
+        state?.setHasHydrated(true);
       },
     }
   )
@@ -99,3 +106,19 @@ export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated
 export const selectUserRole = (state: AuthState) => state.user?.role;
 export const selectAccessToken = (state: AuthState) => state.accessToken;
 export const selectIsHydrated = (state: AuthState) => state.isHydrated;
+export const selectHasHydrated = (state: AuthState) => state._hasHydrated;
+
+/**
+ * Hook to ensure store is hydrated before using auth data
+ */
+export const useAuthStoreHydrated = () => {
+  const isHydrated = useAuthStore(selectIsHydrated);
+  const user = useAuthStore(selectUser);
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  
+  return {
+    isHydrated,
+    user: isHydrated ? user : null,
+    isAuthenticated: isHydrated ? isAuthenticated : false,
+  };
+};

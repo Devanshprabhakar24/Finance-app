@@ -83,9 +83,22 @@ export const changePasswordSchema = z.object({
     ),
 });
 
+export const changePasswordWithOtpSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z
+    .string()
+    .min(8, 'New password must be at least 8 characters')
+    .regex(
+      passwordRegex,
+      'Password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character'
+    ),
+  otp: z.string().min(6, 'OTP must be 6 digits').max(6, 'OTP must be 6 digits'),
+});
+
 export type UserRegistrationInput = z.infer<typeof userRegistrationSchema>;
 export type AdminCreateUserInput = z.infer<typeof adminCreateUserSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type UpdateRoleInput = z.infer<typeof updateRoleSchema>;
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type ChangePasswordWithOtpInput = z.infer<typeof changePasswordWithOtpSchema>;

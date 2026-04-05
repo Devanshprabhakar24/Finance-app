@@ -4,6 +4,7 @@ import { UpdateProfileInput } from './user.schema';
 import { paginate, PaginationOptions, PaginationResult } from '../../utils/paginate';
 import { uploadToCloudinary, deleteFromCloudinary } from '../../config/cloudinary';
 import { logger } from '../../utils/logger';
+import { invalidateUserCache } from '../../utils/userCache';
 import {
   NotFoundError,
   ConflictError,
@@ -45,7 +46,7 @@ export const getUserById = async (userId: string): Promise<IUser> => {
     .select('name email phone role status isVerified profileImage lastLogin createdAt')
     .lean();
   if (!user) throw new NotFoundError('User not found');
-  return user as IUser;
+  return user as unknown as IUser;
 };
 
 /**
@@ -82,6 +83,7 @@ export const adminCreateUser = async (data: {
 
 /**
  * Update user role — prevents self-demotion and removing last admin
+ * Section 3.1: Invalidates user cache after role change
  */
 export const updateUserRole = async (
   userId: string,
@@ -108,12 +110,16 @@ export const updateUserRole = async (
   user.role = role;
   await user.save();
 
+  // Invalidate cache after role change
+  invalidateUserCache(userId);
+
   logger.info(`User role updated: ${user.email} -> ${role}`);
   return user;
 };
 
 /**
  * Update user status — prevents self-deactivation and deactivating last admin
+ * Section 3.1: Invalidates user cache after status change
  */
 export const updateUserStatus = async (
   userId: string,
@@ -140,12 +146,16 @@ export const updateUserStatus = async (
   user.status = status;
   await user.save();
 
+  // Invalidate cache after status change
+  invalidateUserCache(userId);
+
   logger.info(`User status updated: ${user.email} -> ${status}`);
   return user;
 };
 
 /**
  * Soft-delete user (sets status INACTIVE). Cannot delete self or last admin.
+ * Section 3.1: Invalidates user cache after deletion
  */
 export const softDeleteUser = async (
   userId: string,
@@ -171,6 +181,9 @@ export const softDeleteUser = async (
   user.status = UserStatus.INACTIVE;
   await user.save();
 
+  // Invalidate cache after deletion
+  invalidateUserCache(userId);
+
   logger.info(`User soft-deleted: ${user.email}`);
 };
 
@@ -182,11 +195,12 @@ export const getMyProfile = async (userId: string): Promise<IUser> => {
     .select('name email phone role status isVerified profileImage lastLogin createdAt')
     .lean();
   if (!user) throw new NotFoundError('User not found');
-  return user as IUser;
+  return user as unknown as IUser;
 };
 
 /**
  * Update current user profile
+ * Section 3.1: Invalidates user cache after profile update
  */
 export const updateMyProfile = async (
   userId: string,
@@ -212,6 +226,10 @@ export const updateMyProfile = async (
   if (data.name) user.name = data.name;
 
   await user.save();
+  
+  // Invalidate cache after profile update
+  invalidateUserCache(userId);
+  
   logger.info(`Profile updated: ${user.email}`);
   return user;
 };
@@ -262,4 +280,34 @@ export const changePassword = async (
   await user.save();
 
   logger.info(`Password changed for user: ${user.email}`);
+};
+
+/**
+ * Change password with OTP verification for authenticated user
+ */
+export const changePasswordWithOtp = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+  otp: string
+): Promise<void> => {
+  const user = await User.findById(userId).select('+passwordHash');
+  if (!user) throw new NotFoundError('User not found');
+
+  // Verify current password
+  const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!isPasswordValid) {
+    throw new UnauthorizedError('Current password is incorrect');
+  }
+
+  // Verify OTP first
+  const { verifyOtp } = await import('../auth/otp.service');
+  const { OtpPurpose } = await import('../auth/otp.model');
+  await verifyOtp(user.email, otp, OtpPurpose.CHANGE_PASSWORD);
+
+  // Hash and save new password
+  user.passwordHash = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  logger.info(`Password changed with OTP for user: ${user.email}`);
 };

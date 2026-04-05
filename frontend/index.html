@@ -2,20 +2,24 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- Use app icon, not Vite default -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Zorvyn - Secure, Compliant & Intelligent Financial Systems" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
+    <!-- Theme color for browser chrome -->
+    <meta name="theme-color" content="#0A0F1E" />
+    <!-- Accessibility improvements -->
+    <meta name="color-scheme" content="dark light" />
+    <!-- Security headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <!-- Performance hints -->
+    <link rel="dns-prefetch" href="//api.zorvyn.com" />
     <title>Zorvyn - Financial Platform</title>
-    <script>
-      // Force dark mode immediately to prevent flash
-      document.documentElement.classList.add('dark');
-    </script>
+    <script>document.documentElement.classList.add('dark');</script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" role="application" aria-label="Zorvyn Financial Platform"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

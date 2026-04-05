@@ -73,7 +73,7 @@ export const getRecordById = async (recordId: string): Promise<IFinancialRecord>
     .lean();
 
   if (!record) throw new NotFoundError('Financial record not found');
-  return record as IFinancialRecord;
+  return record as unknown as IFinancialRecord;
 };
 
 /**

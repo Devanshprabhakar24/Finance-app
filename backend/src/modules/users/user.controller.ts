@@ -121,3 +121,30 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
   await userService.changePassword(req.user!._id.toString(), currentPassword, newPassword);
   sendSuccess(res, 'Password changed successfully');
 });
+
+/**
+ * POST /api/users/me/request-password-change-otp
+ * Request OTP for password change
+ */
+export const requestPasswordChangeOtp = asyncHandler(async (req: Request, res: Response) => {
+  const { generateAndSendOtp } = await import('../auth/otp.service');
+  const { OtpPurpose } = await import('../auth/otp.model');
+  
+  await generateAndSendOtp(req.user!.email, OtpPurpose.CHANGE_PASSWORD);
+  sendSuccess(res, 'OTP sent to your email for password change verification');
+});
+
+/**
+ * PATCH /api/users/me/change-password-with-otp
+ * Change password with OTP verification for authenticated user (all roles)
+ */
+export const changePasswordWithOtp = asyncHandler(async (req: Request, res: Response) => {
+  const { currentPassword, newPassword, otp } = req.body;
+  await userService.changePasswordWithOtp(
+    req.user!._id.toString(), 
+    currentPassword, 
+    newPassword, 
+    otp
+  );
+  sendSuccess(res, 'Password changed successfully');
+});

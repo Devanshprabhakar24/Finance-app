@@ -21,6 +21,15 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/auth/check-availability
+ */
+export const checkAvailability = asyncHandler(async (req: Request, res: Response) => {
+  const { email, phone } = req.body;
+  const result = await authService.checkAvailability(email, phone);
+  sendSuccess(res, 'Availability checked', result);
+});
+
+/**
  * POST /api/auth/verify-otp
  */
 export const verifyOtp = asyncHandler(async (req: Request, res: Response) => {
@@ -135,4 +144,23 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
   const { identifier, otp, newPassword }: ResetPasswordInput = req.body;
   await authService.resetPassword(identifier, otp, newPassword);
   sendSuccess(res, 'Password reset successfully. Please login with your new password.');
+});
+
+/**
+ * POST /api/auth/test-email
+ * Test email functionality (development only)
+ */
+export const testEmail = asyncHandler(async (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ message: 'Not found' });
+  }
+  
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  const { sendOtpEmail } = await import('../../config/mailer');
+  await sendOtpEmail(email, '123456', 'TEST');
+  sendSuccess(res, 'Test email sent successfully');
 });
