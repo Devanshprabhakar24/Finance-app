@@ -13,15 +13,53 @@ function convertImportsToRequire(content) {
         // import * as name from 'module' -> const name = require('module')
         .replace(/import\s+\*\s+as\s+(\w+)\s+from\s+['"`]([^'"`]+)['"`];?/g, 'const $1 = require(\'$2\');')
         // import 'module' -> require('module')
-        .replace(/import\s+['"`]([^'"`]+)['"`];?/g, 'require(\'$1\');')
+        .replace(/import\s+['"`]([^'"`]+)['"`];?/g, 'require(\'$1\');');
+
+    return content;
+}
+
+function convertExports(content) {
+    // Convert ES6 exports to CommonJS
+    content = content
         // export default -> module.exports =
         .replace(/export\s+default\s+/g, 'module.exports = ')
         // export { named } -> module.exports = { named }
         .replace(/export\s+\{\s*([^}]+)\s*\};?/g, 'module.exports = { $1 };')
-        // export const/function/class -> module.exports.name =
-        .replace(/export\s+(const|let|var|function|class)\s+(\w+)/g, '$1 $2')
-        // Remove export from function/class declarations and add module.exports assignment
-        .replace(/export\s+(function|class)\s+(\w+)/g, '$1 $2\nmodule.exports.$2 = $2;');
+        // export const/let/var/function/class
+        .replace(/export\s+(const|let|var)\s+(\w+)/g, '$1 $2')
+        .replace(/export\s+(function|class)\s+(\w+)/g, '$1 $2');
+
+    return content;
+}
+
+function removeTypeScriptSyntax(content) {
+    // Remove TypeScript-specific syntax
+    content = content
+        // Remove import type statements
+        .replace(/import\s+type\s+.*?from\s+.*?;?\n?/g, '')
+        // Remove export type statements
+        .replace(/export\s+type\s+.*?=.*?;?\n?/g, '')
+        // Remove interface declarations
+        .replace(/export\s+interface\s+\w+\s*\{[\s\S]*?\}\n?/g, '')
+        .replace(/interface\s+\w+\s*\{[\s\S]*?\}\n?/g, '')
+        // Remove type aliases
+        .replace(/type\s+\w+\s*=[\s\S]*?;?\n?/g, '')
+        // Remove type annotations from variable declarations
+        .replace(/(const|let|var)\s+(\w+)\s*:\s*[^=\n;]+(\s*=)/g, '$1 $2$3')
+        // Remove type annotations from function parameters
+        .replace(/(\w+)\s*:\s*[^,\)=\n{]+(?=[,\)])/g, '$1')
+        // Remove return type annotations
+        .replace(/\)\s*:\s*[^{=\n;]+(\s*[{=])/g, ')$1')
+        // Remove type assertions (as Type)
+        .replace(/(\w+|\))\s+as\s+[^,\)\n;]+/g, '$1')
+        // Remove optional property markers
+        .replace(/(\w+)\?\s*:/g, '$1:')
+        // Remove access modifiers
+        .replace(/(public|private|protected|readonly)\s+/g, '')
+        // Remove generic type parameters
+        .replace(/(\w+)\s*<[^>]*>(\s*\()/g, '$1$2')
+        // Clean up extra whitespace
+        .replace(/\n\s*\n\s*\n/g, '\n\n');
 
     return content;
 }
@@ -41,25 +79,14 @@ function copyAndRenameFiles(srcDir, destDir) {
             const newDestDir = path.join(destDir, item);
             copyAndRenameFiles(srcPath, newDestDir);
         } else if (item.endsWith('.ts')) {
-            // Copy .ts files as .js files with full conversion
+            // Copy .ts files as .js files with conversion
             const destPath = path.join(destDir, item.replace('.ts', '.js'));
             let content = fs.readFileSync(srcPath, 'utf8');
 
-            // Convert imports/exports first
+            // Apply conversions in order
+            content = removeTypeScriptSyntax(content);
             content = convertImportsToRequire(content);
-
-            // Basic TypeScript to JavaScript conversion
-            content = content
-                .replace(/import\s+type\s+.*?from\s+.*?;/g, '') // Remove type imports
-                .replace(/:\s*\w+(\[\])?(\s*\|\s*\w+)*\s*=/g, ' =') // Remove type annotations in assignments
-                .replace(/:\s*\w+(\[\])?(\s*\|\s*\w+)*\s*\)/g, ')') // Remove type annotations in function params
-                .replace(/:\s*\w+(\[\])?(\s*\|\s*\w+)*\s*;/g, ';') // Remove type annotations in declarations
-                .replace(/export\s+interface\s+.*?\{[\s\S]*?\}/g, '') // Remove interfaces
-                .replace(/export\s+type\s+.*?=.*?;/g, '') // Remove type aliases
-                .replace(/as\s+\w+/g, '') // Remove type assertions
-                .replace(/\?\s*:/g, ':') // Remove optional property markers
-                .replace(/public\s+|private\s+|protected\s+/g, '') // Remove access modifiers
-                .replace(/readonly\s+/g, ''); // Remove readonly
+            content = convertExports(content);
 
             fs.writeFileSync(destPath, content);
             console.log(`Converted: ${srcPath} -> ${destPath}`);
@@ -83,22 +110,6 @@ try {
     copyAndRenameFiles('src', 'dist');
 
     console.log('Build completed successfully!');
-    console.log('Generated files:');
-
-    function listFiles(dir, prefix = '') {
-        const items = fs.readdirSync(dir);
-        for (const item of items) {
-            const fullPath = path.join(dir, item);
-            if (fs.statSync(fullPath).isDirectory()) {
-                console.log(`${prefix}📁 ${item}/`);
-                listFiles(fullPath, prefix + '  ');
-            } else {
-                console.log(`${prefix}📄 ${item}`);
-            }
-        }
-    }
-
-    listFiles('dist');
     process.exit(0);
 
 } catch (error) {
