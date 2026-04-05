@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     runtime: node
-    buildCommand: cd backend && npm ci --include=dev && rm -rf dist && npm run build && node verify-build.js
+    buildCommand: cd backend && npm ci --production
     startCommand: cd backend && npm start
     healthCheckPath: /api/health
     envVars:

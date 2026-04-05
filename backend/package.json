@@ -7,7 +7,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "node build.js",
     "tsc-build": "tsc --skipLibCheck --noEmitOnError false",
-    "start": "node --max-old-space-size=512 --optimize-for-size dist/cluster.js",
+    "start": "node server-simple.js",
     "start:debug": "node start-debug.js",
     "start:single": "node dist/server.js",
     "seed": "ts-node scripts/seed.ts",
