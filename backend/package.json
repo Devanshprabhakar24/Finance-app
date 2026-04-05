@@ -5,8 +5,8 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "node build.js",
-    "tsc-build": "tsc --skipLibCheck --noEmitOnError false",
+    "build": "tsc --skipLibCheck --noEmitOnError false",
+    "build:custom": "node build.js",
     "start": "node server-simple.js",
     "start:debug": "node start-debug.js",
     "start:single": "node dist/server.js",
