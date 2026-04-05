@@ -6,11 +6,12 @@ import { Request, Response, NextFunction } from 'express';
  */
 export const responseTime = () => {
   return (_req: Request, res: Response, next: NextFunction) => {
-    const start = process.hrtime.bigint();
+    const start = process.hrtime();
     res.on('finish', () => {
       // Only set header if response hasn't been sent yet
       if (!res.headersSent) {
-        const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
+        const [seconds, nanoseconds] = process.hrtime(start);
+        const durationMs = seconds * 1000 + nanoseconds / 1_000_000;
         res.setHeader('X-Response-Time', `${durationMs.toFixed(2)}ms`);
       }
     });
