@@ -5,7 +5,7 @@ declare global {
     ;
       uptime(): number;
       hrtime(time: [number, number]): [number, number];
-      on(event, listener) => void): Process;
+      on(event, listener: (...args) => void): Process;
     }
 
   }
@@ -33,9 +33,9 @@ declare global {
   var console: Console;
   var require: any;
   
-  function setTimeout(callback) => void, ms, ...args): NodeJS.Timeout;
+  function setTimeout(callback: (...args) => void, ms, ...args): NodeJS.Timeout;
   function clearTimeout(timeoutId): void;
-  function setInterval(callback) => void, ms, ...args): NodeJS.Timeout;
+  function setInterval(callback: (...args) => void, ms, ...args): NodeJS.Timeout;
 
   ;
     equals(otherBuffer): boolean;
@@ -96,7 +96,7 @@ declare module 'cluster' {
   const isWorker: boolean;
   const worker: any;
   function fork(): any;
-  function on(event, listener) => void): any;
+  function on(event, listener: (...args) => void): any;
 }
 
 declare module 'os' {
@@ -113,8 +113,8 @@ declare module 'stream' {
     push(chunk): boolean;
     _read(): void;
     pipe(destination, options: any): any;
-    on(event, listener) => void): this;
-    once(event, listener) => void): this;
+    on(event, listener: (...args) => void): this;
+    once(event, listener: (...args) => void): this;
     emit(event, ...args): boolean;
   }
   

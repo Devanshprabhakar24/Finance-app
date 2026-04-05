@@ -139,7 +139,7 @@ const getMonthlyTrends = async (year: number)=> {
     { $sort: { '_id.month': 1 } },
   ]).allowDiskUse(true);
 
-  const monthlyMap = new Map<string, { income);
+  const monthlyMap = new Map<string, { income: number; expense);
 
   result.forEach((item) => {
     const key = `${item._id.year}-${String(item._id.month).padStart(2, '0')}-01`;

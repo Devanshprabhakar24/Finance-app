@@ -12,8 +12,8 @@ const getStore = () => {
 
   return new RedisStore({
     // @ts-ignore - Redis call signature compatibility
-    sendCommand) => redis.call(...args),
-    prefix,
+    sendCommand: (...args) => redis.call(...args),
+    prefix: 'rl,
   });
 };
 

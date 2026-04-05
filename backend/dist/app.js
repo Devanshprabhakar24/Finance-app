@@ -103,7 +103,7 @@ const createApp = ()=> {
 
   // Section 4.3: Structured HTTP logging via Winston
   const morganStream = {
-    write) => logger.http(message.trim()),
+    write: (message) => logger.http(message.trim()),
   };
 
   morgan.token('correlation-id', (req) => req.correlationId);

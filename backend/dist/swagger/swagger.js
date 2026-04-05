@@ -385,7 +385,7 @@ const swaggerSpec = {
       post: {
         tags,
         summary,
-        description, PNG, WebP.',
+        description: 'Upload profile picture. Max size 5MB. Supported formats, PNG, WebP.',
         security: [{ bearerAuth,
         requestBody: {
           required,
@@ -574,7 +574,7 @@ const swaggerSpec = {
       post: {
         tags,
         summary)',
-        description, PNG, WebP, PDF.',
+        description: 'Upload file attachment to record. Max size 5MB. Supported, PNG, WebP, PDF.',
         security: [{ bearerAuth,
         parameters: [
           { name, in, required, schema: { type, description,

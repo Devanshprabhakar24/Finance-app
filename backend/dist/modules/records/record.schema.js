@@ -45,7 +45,7 @@ const createRecordSchema = z.object({
     .transform((date) => {
       // Convert YYYY-MM-DD to ISO datetime string for consistency
       if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return new Date(date + 'T00).toISOString();
+        return new Date(date + 'T00:00).toISOString();
       }
       return date;
     }),

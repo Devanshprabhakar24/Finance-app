@@ -6,7 +6,7 @@ const { Request, Response, NextFunction  } = require('express');
  * @returns Express middleware function
  */
 const asyncHandler = (
-  fn, res, next) => Promise<any>
+  fn: (req, res, next) => Promise<any>
 ) => {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
