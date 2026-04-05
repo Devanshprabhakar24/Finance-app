@@ -9,7 +9,6 @@ yarn.lock
 .env.*.local
 
 # Build
-dist/
 build/
 
 # Logs
