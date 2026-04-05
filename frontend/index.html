@@ -16,7 +16,16 @@
     <!-- Performance hints -->
     <link rel="dns-prefetch" href="//api.zorvyn.com" />
     <title>Zorvyn - Financial Platform</title>
-    <script>document.documentElement.classList.add('dark');</script>
+    <script>
+      document.documentElement.classList.add('dark');
+      // Prevent extension conflicts
+      window.addEventListener('error', function(e) {
+        if (e.filename && (e.filename.includes('inject.js') || e.filename.includes('contentYt.js'))) {
+          e.preventDefault();
+          return true;
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root" role="application" aria-label="Zorvyn Financial Platform"></div>
