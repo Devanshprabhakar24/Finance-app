@@ -1,9 +1,9 @@
-const { createApp  } = require('./app');
-const { connectDB  } = require('./config/db');
-const { env  } = require('./config/env');
-const { logger  } = require('./utils/logger');
+const { createApp } = require('./app');
+const { connectDB } = require('./config/db');
+const { env } = require('./config/env');
+const { logger } = require('./utils/logger');
 const mongoose = require('mongoose');
-const { getRedisClient  } = require('./config/redis');
+const { getRedisClient } = require('./config/redis');
 const cloudinary = require('cloudinary');
 
 /**
@@ -14,19 +14,19 @@ const verifyStartup = async () => {
   // 1. MongoDB ping
   if (mongoose.connection.db) {
     await mongoose.connection.db.admin().ping();
-    logger.info('✅ MongoDB);
+    logger.info('✅ MongoDB connection verified');
   }
 
   // 2. Redis ping (if configured)
   const redis = getRedisClient();
   if (redis) {
     await redis.ping();
-    logger.info('✅ Redis);
+    logger.info('✅ Redis connection verified');
   }
 
   // 3. Verify Cloudinary config is valid
   await cloudinary.v2.api.ping();
-  logger.info('✅ Cloudinary);
+  logger.info('✅ Cloudinary connection verified');
 };
 
 /**
@@ -59,19 +59,19 @@ const startServer = async () => {
     // Section 6.3: Graceful shutdown with connection draining
     const gracefulShutdown = async (signal) => {
       logger.info(`${signal} received. Starting graceful shutdown...`);
-      
+
       // Stop accepting new connections
       server.close(async () => {
         logger.info('HTTP server closed — no new connections accepted');
-        
+
         try {
           // Wait for MongoDB operations to complete
           await mongoose.connection.close(false);  // false = don't force close
           logger.info('MongoDB connection closed cleanly');
         } catch (err) {
-          logger.error('Error closing MongoDB connection, err);
+          logger.error('Error closing MongoDB connection:', err);
         }
-        
+
         logger.info('Graceful shutdown complete');
         process.exit(0);
       });
@@ -86,7 +86,7 @@ const startServer = async () => {
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
   } catch (error) {
-    logger.error('Failed to start server, error);
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
 };
