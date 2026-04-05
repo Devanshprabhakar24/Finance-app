@@ -31,7 +31,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/api\.zorvyn\.com\//,
+            urlPattern: /^https:\/\/finance-app-ddaf\.onrender\.com\//,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
@@ -44,9 +44,9 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: 'Zorvyn Financial Platform',
-        short_name: 'Zorvyn',
-        description: 'Secure, Compliant & Intelligent Financial Systems',
+        name: 'Finance Dashboard',
+        short_name: 'Finance',
+        description: 'Secure Financial Management Platform',
         theme_color: '#0A0F1E',
         background_color: '#0A0F1E',
         display: 'standalone',
