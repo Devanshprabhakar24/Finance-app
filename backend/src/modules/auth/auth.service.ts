@@ -23,7 +23,7 @@ const generateAccessToken = (user: IUser): string => {
     email: user.email,
     role: user.role,
   };
-  return jwt.sign(payload, env.jwt.accessSecret, { expiresIn: env.jwt.accessExpires } as any);
+  return jwt.sign(payload, env.jwt.accessSecret, { expiresIn: env.jwt.accessExpires } as jwt.SignOptions);
 };
 
 /**
@@ -33,7 +33,7 @@ const generateRefreshToken = (user: IUser): string => {
   const payload = {
     userId: user._id,
   };
-  return jwt.sign(payload, env.jwt.refreshSecret, { expiresIn: env.jwt.refreshExpires } as any);
+  return jwt.sign(payload, env.jwt.refreshSecret, { expiresIn: env.jwt.refreshExpires } as jwt.SignOptions);
 };
 
 /**
@@ -159,7 +159,7 @@ export const verifyOtpAndAuthenticate = async (
     user.lastLogin = new Date();
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
-    (user as any).refreshToken = refreshToken;
+    user.refreshToken = refreshToken;
     await user.save();
 
     logger.info(`User authenticated: ${user.email}`);

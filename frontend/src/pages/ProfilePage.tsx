@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuthStore } from '@/store/auth.store';
 import { User, Mail, Phone, Shield, Calendar, Edit2, Save, X, Lock, Upload, Loader2, KeyRound } from 'lucide-react';
@@ -10,10 +10,31 @@ import { requestPasswordChangeOtp, changePasswordWithOtp } from '@/api/users.api
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
-  const { user, setUser } = useAuthStore();
+  const { user: authUser, setUser } = useAuthStore();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showOtpStep, setShowOtpStep] = useState(false);
+
+  // Fetch user profile from API
+  const { data: userProfile, isLoading: isLoadingProfile, error: profileError } = useQuery({
+    queryKey: ['user', 'me'],
+    queryFn: async () => {
+      const response = await apiClient.get('/users/me');
+      return response.data.data;
+    },
+    enabled: !!authUser, // Only fetch if user is authenticated
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error: any) => {
+      // Don't retry on 401 errors (authentication issues)
+      if (error?.response?.status === 401) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+  });
+
+  // Use the fetched profile or fallback to auth store user
+  const user = userProfile || authUser;
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -36,7 +57,10 @@ export default function ProfilePage() {
       return response.data;
     },
     onSuccess: (data) => {
-      setUser(data.data);
+      const updatedUser = data.data;
+      setUser(updatedUser);
+      // Update the query cache
+      queryClient.setQueryData(['user', 'me'], updatedUser);
       toast.success('Profile updated successfully');
       setIsEditingProfile(false);
     },
@@ -108,7 +132,10 @@ export default function ProfilePage() {
       return response.data;
     },
     onSuccess: (data) => {
-      setUser(data.data);
+      const updatedUser = data.data;
+      setUser(updatedUser);
+      // Update the query cache
+      queryClient.setQueryData(['user', 'me'], updatedUser);
       toast.success('Avatar updated successfully');
     },
     onError: (error: any) => {
@@ -184,12 +211,48 @@ export default function ProfilePage() {
     uploadAvatarMutation.mutate(file);
   };
 
-  if (!user) {
+  // Show loading state or error state
+  if (isLoadingProfile && !authUser) {
     return (
       <div>
         <PageHeader title="Profile" subtitle="Manage your account" />
         <div className="card">
-          <p className="text-center py-8">Loading...</p>
+          <div className="flex items-center justify-center py-8">
+            <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+            <p className="ml-3 text-slate-600 dark:text-slate-400">Loading profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If API call failed but we have auth user, show auth user data
+  if (profileError && authUser) {
+    console.warn('Profile API failed, using auth store data:', profileError);
+  }
+
+  // If no user data at all, show error
+  if (!user || !user.name || !user.email) {
+    return (
+      <div>
+        <PageHeader title="Profile" subtitle="Manage your account" />
+        <div className="card">
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="text-red-500 mb-4">
+              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 text-center">
+              Unable to load profile data. Please try logging in again.
+            </p>
+            <button
+              onClick={() => window.location.href = '/login'}
+              className="mt-4 btn-primary"
+            >
+              Go to Login
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -207,10 +270,10 @@ export default function ProfilePage() {
               {/* Avatar */}
               <div className="relative inline-block mb-4">
                 <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-4xl font-bold overflow-hidden">
-                  {user.avatar ? (
-                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                  {user.profileImage ? (
+                    <img src={user.profileImage} alt={user.name || 'User'} className="w-full h-full object-cover" />
                   ) : (
-                    user.name.charAt(0).toUpperCase()
+                    (user.name || 'U').charAt(0).toUpperCase()
                   )}
                 </div>
                 <label
@@ -234,10 +297,10 @@ export default function ProfilePage() {
               </div>
 
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-                {user.name}
+                {user.name || 'Unknown User'}
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                {user.email}
+                {user.email || 'No email'}
               </p>
 
               {/* Role Badge */}
@@ -273,7 +336,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => {
                     setIsEditingProfile(true);
-                    setProfileForm({ name: user.name, phone: user.phone });
+                    setProfileForm({ name: user.name || '', phone: user.phone || '' });
                   }}
                   className="btn-secondary flex items-center gap-2"
                 >
@@ -314,7 +377,7 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium mb-2">Email</label>
                   <input
                     type="email"
-                    value={user.email}
+                    value={user.email || ''}
                     className="input-field bg-slate-100 dark:bg-slate-800 cursor-not-allowed"
                     disabled
                   />
@@ -357,7 +420,7 @@ export default function ProfilePage() {
                   <User className="w-5 h-5 text-slate-400" />
                   <div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Full Name</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{user.name}</p>
+                    <p className="font-medium text-slate-900 dark:text-white">{user.name || 'Not set'}</p>
                   </div>
                 </div>
 
@@ -365,7 +428,7 @@ export default function ProfilePage() {
                   <Mail className="w-5 h-5 text-slate-400" />
                   <div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Email</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{user.email}</p>
+                    <p className="font-medium text-slate-900 dark:text-white">{user.email || 'Not set'}</p>
                   </div>
                 </div>
 
@@ -373,7 +436,7 @@ export default function ProfilePage() {
                   <Phone className="w-5 h-5 text-slate-400" />
                   <div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">Phone</p>
-                    <p className="font-medium text-slate-900 dark:text-white">{user.phone}</p>
+                    <p className="font-medium text-slate-900 dark:text-white">{user.phone || 'Not set'}</p>
                   </div>
                 </div>
 

@@ -1,14 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { Types } from 'mongoose';
 import { env } from '../config/env';
 import { UnauthorizedError } from './errorHandler';
 import { asyncHandler } from '../utils/asyncHandler';
 import { getCachedUser } from '../utils/userCache';
+import { UserRole } from '../modules/users/user.model';
 
 interface JwtPayload {
   userId: string;
   email: string;
-  role: string;
+  role: UserRole;
 }
 
 /**
@@ -43,7 +45,7 @@ export const authenticate = asyncHandler(
       }
 
       // Attach user to request
-      req.user = user as any;
+      req.user = user as any; // Type assertion needed due to cache return type
       next();
     } catch (error) {
       if (error instanceof jwt.JsonWebTokenError) {
@@ -79,10 +81,10 @@ export const lightAuthenticate = asyncHandler(
 
       // Create a minimal user object from JWT claims (no DB lookup)
       req.user = {
-        _id: decoded.userId,
+        _id: new Types.ObjectId(decoded.userId),
         email: decoded.email,
         role: decoded.role,
-      } as any;
+      } as any; // Type assertion for minimal user object
 
       next();
     } catch (error) {

@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { sendSuccess } from '../../utils/response';
+import { UnauthorizedError } from '../../middleware/errorHandler';
 import * as authService from './auth.service';
+import { OtpPurpose } from './otp.model';
 import {
   LoginInput,
   VerifyOtpInput,
@@ -34,7 +36,7 @@ export const checkAvailability = asyncHandler(async (req: Request, res: Response
  */
 export const verifyOtp = asyncHandler(async (req: Request, res: Response) => {
   const { identifier, otp, purpose }: VerifyOtpInput = req.body;
-  const result = await authService.verifyOtpAndAuthenticate(identifier, otp, purpose as any);
+  const result = await authService.verifyOtpAndAuthenticate(identifier, otp, purpose as OtpPurpose);
   
   // Set refresh token in httpOnly cookie
   res.cookie('refreshToken', result.refreshToken, {
@@ -42,6 +44,7 @@ export const verifyOtp = asyncHandler(async (req: Request, res: Response) => {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/',
   });
   
   // Only return accessToken in response body (not refreshToken)
@@ -65,7 +68,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
  */
 export const resendOtp = asyncHandler(async (req: Request, res: Response) => {
   const { identifier, purpose }: ResendOtpInput = req.body;
-  await authService.resendOtp(identifier, purpose as any);
+  await authService.resendOtp(identifier, purpose as OtpPurpose);
   sendSuccess(res, 'OTP resent successfully');
 });
 
@@ -79,21 +82,14 @@ export const sendRegistrationOtp = asyncHandler(async (req: Request, res: Respon
 });
 
 /**
- * POST /api/auth/refresh-token
+ * POST /api/auth/refresh
  */
 export const refreshToken = asyncHandler(async (req: Request, res: Response) => {
   // Get refresh token from httpOnly cookie
   const refreshToken = req.cookies.refreshToken;
   
   if (!refreshToken) {
-    res.status(401).json({ 
-      success: false, 
-      message: 'No refresh token provided',
-      error: {
-        code: 'UNAUTHORIZED'
-      }
-    });
-    return;
+    throw new UnauthorizedError('No refresh token provided');
   }
   
   const tokens = await authService.refreshAccessToken(refreshToken);
@@ -104,6 +100,7 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response) => 
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/',
   });
   
   sendSuccess(res, 'Access token refreshed successfully', { accessToken: tokens.accessToken });
@@ -121,6 +118,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
+    path: '/',
   });
   
   sendSuccess(res, 'Logged out successfully');

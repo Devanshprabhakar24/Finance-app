@@ -15,9 +15,9 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredPermission && user) {
-    const userPermissions = PERMISSIONS[user.role];
-    if (!userPermissions.includes(requiredPermission as any)) {
+  if (requiredPermission && user && user.role) {
+    const userPermissions = PERMISSIONS[user.role as keyof typeof PERMISSIONS];
+    if (!userPermissions || !Array.isArray(userPermissions) || !userPermissions.includes(requiredPermission)) {
       return <Navigate to="/403" replace />;
     }
   }

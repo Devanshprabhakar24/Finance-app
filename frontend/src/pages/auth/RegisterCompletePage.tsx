@@ -33,12 +33,6 @@ export default function RegisterCompletePage() {
 
   const { email, phone } = location.state || {};
 
-  // Redirect if no email/phone from step 1
-  if (!email || !phone) {
-    navigate('/register');
-    return null;
-  }
-
   const {
     register,
     handleSubmit,
@@ -75,6 +69,12 @@ export default function RegisterCompletePage() {
   const onSubmit = (data: CompleteRegistrationInput) => {
     registerMutation.mutate(data);
   };
+
+  // Redirect if no email/phone from step 1 - MUST be after hooks
+  if (!email || !phone) {
+    navigate('/register');
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0A0F1E] via-slate-900 to-[#0A0F1E] flex items-center justify-center p-6">

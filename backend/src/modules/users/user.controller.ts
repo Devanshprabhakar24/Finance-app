@@ -52,7 +52,7 @@ export const updateUserRole = asyncHandler(async (req: Request, res: Response) =
   const { role }: UpdateRoleInput = req.body;
   const user = await userService.updateUserRole(
     req.params.id,
-    role as any,
+    role as UserRole,
     req.user!._id.toString()
   );
   sendSuccess(res, 'User role updated successfully', user);
@@ -66,7 +66,7 @@ export const updateUserStatus = asyncHandler(async (req: Request, res: Response)
   const { status }: UpdateStatusInput = req.body;
   const user = await userService.updateUserStatus(
     req.params.id,
-    status as any,
+    status as UserStatus,
     req.user!._id.toString()
   );
   sendSuccess(res, 'User status updated successfully', user);

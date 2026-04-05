@@ -1,7 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth.store';
 import { useUIStore } from '@/store/ui.store';
 import { usePermission } from '@/hooks/usePermission';
+import { logout as logoutApi } from '@/api/auth.api';
 import { cn } from '@/utils/cn';
 import {
   LayoutDashboard,
@@ -13,12 +15,30 @@ import {
   ChevronLeft,
   Shield,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export function Sidebar() {
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
   const { sidebarCollapsed, toggleSidebar } = useUIStore();
   const { can } = usePermission();
+
+  const logoutMutation = useMutation({
+    mutationFn: logoutApi,
+    onSuccess: () => {
+      useAuthStore.getState().logout();
+      toast.success('Logged out successfully');
+    },
+    onError: () => {
+      // Even if API call fails, clear local state
+      useAuthStore.getState().logout();
+      toast.error('Logout completed (server error)');
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
 
   const navItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Overview', permission: 'view:dashboard' },
@@ -28,6 +48,24 @@ export function Sidebar() {
     { path: '/dashboard/profile', icon: UserCircle, label: 'Account', permission: 'view:profile' },
   ];
 
+  // Show loading state if not hydrated or authenticated but no user data
+  if (!_hasHydrated || (isAuthenticated && !user)) {
+    return (
+      <aside
+        className={cn(
+          'fixed left-0 top-0 h-full bg-slate-900/50 backdrop-blur-xl border-r border-slate-800 transition-all duration-300 z-40',
+          sidebarCollapsed ? 'w-20' : 'w-64'
+        )}
+      >
+        <div className="flex flex-col h-full items-center justify-center">
+          <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-400 text-sm mt-2">Loading...</p>
+        </div>
+      </aside>
+    );
+  }
+
+  // Filter nav items based on permissions
   const visibleItems = navItems.filter((item) => can(item.permission));
 
   return (
@@ -101,12 +139,17 @@ export function Sidebar() {
             </div>
           )}
           <button
-            onClick={logout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors w-full"
+            onClick={handleLogout}
+            disabled={logoutMutation.isPending}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors w-full disabled:opacity-50"
             title={sidebarCollapsed ? 'Logout' : undefined}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="font-medium">Logout</span>}
+            {!sidebarCollapsed && (
+              <span className="font-medium">
+                {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
+              </span>
+            )}
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { FilterQuery } from 'mongoose';
+import { FilterQuery, Types } from 'mongoose';
 import { FinancialRecord, IFinancialRecord } from './record.model';
 import { CreateRecordInput, UpdateRecordInput, RecordFilterInput } from './record.schema';
 import { paginate, PaginationResult } from '../../utils/paginate';
@@ -44,7 +44,7 @@ export const getAllRecords = async (
   // Uses $text operator with the text index for better performance
   if (filters.search) {
     // NOTE: Collection scan on regex — upgrade to Atlas Search for datasets > 100k records
-    (query as any).$text = { $search: filters.search };
+    query.$text = { $search: filters.search };
   }
 
   return paginate(
@@ -88,7 +88,7 @@ export const updateRecord = async (
   if (!record) throw new NotFoundError('Financial record not found');
 
   Object.assign(record, data);
-  record.lastModifiedBy = userId as any; // Convert string to ObjectId
+  record.lastModifiedBy = new Types.ObjectId(userId);
   await record.save();
 
   logger.info(`Financial record updated: ${recordId} by user ${userId}`);
@@ -107,7 +107,7 @@ export const deleteRecord = async (
 
   record.isDeleted = true;
   record.deletedAt = new Date();
-  record.lastModifiedBy = userId as any; // Convert string to ObjectId
+  record.lastModifiedBy = new Types.ObjectId(userId);
   
   // Clean up Cloudinary attachment if exists (fire-and-forget)
   if (record.attachmentPublicId) {

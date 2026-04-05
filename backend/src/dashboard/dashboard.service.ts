@@ -223,7 +223,7 @@ export const getTopExpenseCategories = async (
   range?: DateRangeFilter
 ): Promise<TopCategoryData[]> => {
   const match = buildBaseMatch(range);
-  (match as any).type = RecordType.EXPENSE;
+  match.type = RecordType.EXPENSE;
 
   const result = await FinancialRecord.aggregate([
     { $match: match },

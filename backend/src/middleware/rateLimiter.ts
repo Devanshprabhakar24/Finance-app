@@ -87,7 +87,7 @@ export const userRateLimiter = rateLimit({
   store: getStore(),
   keyGenerator: (req) => {
     // Use user ID from JWT if authenticated, fall back to IP
-    return (req as any).user?._id?.toString() || req.ip || 'unknown';
+    return req.user?._id?.toString() || req.ip || 'unknown';
   },
   message: {
     success: false,

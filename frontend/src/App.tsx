@@ -43,16 +43,7 @@ function App() {
   const _hasHydrated = useAuthStore(selectHasHydrated);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  // Show loading spinner until store is hydrated
-  if (!_hasHydrated) {
-    return (
-      <div className="min-h-screen bg-[#0A0F1E] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // Initialize on mount
+  // Initialize on mount - MUST be before any conditional returns
   useEffect(() => {
     // Initialize theme
     initializeTheme();
@@ -74,9 +65,13 @@ function App() {
     });
   }, []);
 
-  // Don't render routes until store is rehydrated
+  // Show loading spinner until store is hydrated
   if (!_hasHydrated) {
-    return <AuthPageSkeleton />;
+    return (
+      <div className="min-h-screen bg-[#0A0F1E] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (

@@ -30,6 +30,7 @@ export interface VerifyOtpResponse {
   data: {
     user: User;
     accessToken: string;
+    refreshToken: string;
   };
 }
 

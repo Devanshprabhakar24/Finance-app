@@ -81,17 +81,18 @@ export const errorHandler = (
   _next: NextFunction
 ): Response => {
   logger.error('Error:', {
-    correlationId: (req as any).correlationId,
+    correlationId: req.correlationId,
     message: err.message,
     stack: err.stack,
     path: req.path,
     method: req.method,
-    userId: (req as any).user?._id,
+    userId: req.user?._id,
   });
 
   // Handle Multer errors (Section 2.7: file too large, wrong type)
-  if ((err as any).name === 'MulterError') {
-    if ((err as any).code === 'LIMIT_FILE_SIZE') {
+  if (err.name === 'MulterError') {
+    const multerError = err as any;
+    if (multerError.code === 'LIMIT_FILE_SIZE') {
       return sendError(res, 'File too large. Maximum size is 5MB.', 'FILE_TOO_LARGE', undefined, 413);
     }
     return sendError(res, err.message, 'UPLOAD_ERROR', undefined, 400);
@@ -130,8 +131,9 @@ export const errorHandler = (
   }
 
   // Handle MongoDB duplicate key error
-  if (err.name === 'MongoServerError' && (err as any).code === 11000) {
-    const field = Object.keys((err as any).keyPattern)[0];
+  if (err.name === 'MongoServerError' && 'code' in err && (err as any).code === 11000) {
+    const mongoError = err as any;
+    const field = Object.keys(mongoError.keyPattern)[0];
     return sendError(
       res,
       `${field} already exists`,

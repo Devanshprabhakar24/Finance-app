@@ -201,8 +201,6 @@ export const USER_STATUS = {
   INACTIVE: 'INACTIVE',
 } as const;
 
-export type UserStatus = typeof USER_STATUS[keyof typeof USER_STATUS];
-
 // Local Storage Keys
 export const STORAGE_KEYS = {
   THEME: 'finance-dashboard-theme',

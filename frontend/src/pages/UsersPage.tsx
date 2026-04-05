@@ -88,14 +88,14 @@ export default function UsersPage() {
     },
   });
 
-  const handleEditUser = (user: UserListItem) => {
+  const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setEditRole(user.role);
     setEditStatus(user.status);
     setShowEditModal(true);
   };
 
-  const handleDeleteUser = (user: UserListItem) => {
+  const handleDeleteUser = (user: User) => {
     setSelectedUser(user);
     setShowDeleteModal(true);
   };
