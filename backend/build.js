@@ -64,6 +64,29 @@ function removeTypeScriptSyntax(content) {
     return content;
 }
 
+function fixCommonJavaScriptIssues(content) {
+    // Fix common issues after TypeScript removal
+    content = content
+        // Fix object properties that lost their values
+        .replace(/(\w+):\s*,/g, '$1: 0,')
+        .replace(/(\w+):\s*\}/g, '$1: 0}')
+        .replace(/(\w+):\s*\n/g, '$1: 0\n')
+        // Fix winston format calls specifically
+        .replace(/winston\.format\.errors\(\s*{\s*stack\s*\)/g, 'winston.format.errors({ stack: true })')
+        .replace(/winston\.format\.timestamp\(\s*{\s*format\s*\)/g, 'winston.format.timestamp({ format: \'YYYY-MM-DD HH:mm:ss\' })')
+        .replace(/winston\.format\.colorize\(\s*{\s*all\s*\)/g, 'winston.format.colorize({ all: true })')
+        // Fix object literals in levels and colors
+        .replace(/const levels = \{\s*error,\s*warn,\s*info,\s*http,\s*debug,\s*\};/g,
+            'const levels = { error: 0, warn: 1, info: 2, http: 3, debug: 4 };')
+        .replace(/const colors = \{\s*error,\s*warn,\s*info,\s*http,\s*debug,\s*\};/g,
+            'const colors = { error: \'red\', warn: \'yellow\', info: \'green\', http: \'magenta\', debug: \'white\' };')
+        // Fix file paths in winston transports
+        .replace(/filename,\s*level\s*\)/g, 'filename: \'logs/error.log\', level: \'error\' })')
+        .replace(/filename\s*\)/g, 'filename: \'logs/all.log\' })');
+
+    return content;
+}
+
 function copyAndRenameFiles(srcDir, destDir) {
     if (!fs.existsSync(destDir)) {
         fs.mkdirSync(destDir, { recursive: true });

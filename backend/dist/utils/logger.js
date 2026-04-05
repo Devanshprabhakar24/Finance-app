@@ -1,25 +1,13 @@
 const winston = require('winston');
 const { env } = require('../config/env');
 
-const levels = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  http: 3,
-  debug: 4,
-};
+const levels = { error: 0, warn: 1, info: 2, http: 3, debug: 4 };
 
-const colors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  debug: 'white',
-};
+const colors = { error: 'red', warn: 'yellow', info: 'green', http: 'magenta', debug: 'white' };
 
 winston.addColors(colors);
 
-// Section 4.1: Structured JSON logging in production - Updated for Render deployment
+// Section 4.1: Structured JSON logging in production
 const productionFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
