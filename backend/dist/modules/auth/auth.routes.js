@@ -1,0 +1,91 @@
+const { Router  } = require('express');
+const authController = require('./auth.controller');
+const { validateBody  } = require('../../middleware/validate');
+const { authenticate  } = require('../../middleware/authenticate');
+const { authLimiter, otpLimiter, availabilityLimiter  } = require('../../middleware/rateLimiter');
+const { noCache  } = require('../../middleware/cacheControl');
+const { userRegistrationSchema  } = require('../users/user.schema');
+const { loginSchema,
+  verifyOtpSchema,
+  resendOtpSchema,
+  refreshTokenSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+ } = require('./auth.schema');
+
+const router = Router();
+
+// Section 2.1: No caching for auth routes
+router.use(noCache);
+
+// Public routes with rate limiting
+router.post(
+  '/register',
+  authLimiter,
+  validateBody(userRegistrationSchema),
+  authController.register
+);
+
+// Check email/phone availability
+router.post(
+  '/check-availability',
+  availabilityLimiter,
+  authController.checkAvailability
+);
+
+router.post(
+  '/verify-otp',
+  authLimiter,
+  validateBody(verifyOtpSchema),
+  authController.verifyOtp
+);
+
+router.post(
+  '/login',
+  authLimiter,
+  validateBody(loginSchema),
+  authController.login
+);
+
+router.post(
+  '/resend-otp',
+  otpLimiter,
+  validateBody(resendOtpSchema),
+  authController.resendOtp
+);
+
+router.post(
+  '/send-registration-otp',
+  otpLimiter,
+  authController.sendRegistrationOtp
+);
+
+router.post(
+  '/refresh',
+  validateBody(refreshTokenSchema),
+  authController.refreshToken
+);
+
+router.post(
+  '/forgot-password',
+  authLimiter,
+  validateBody(forgotPasswordSchema),
+  authController.forgotPassword
+);
+
+router.post(
+  '/reset-password',
+  authLimiter,
+  validateBody(resetPasswordSchema),
+  authController.resetPassword
+);
+
+// Test email endpoint (development only)
+if (process.env.NODE_ENV !== 'production') {
+  router.post('/test-email', authController.testEmail);
+}
+
+// Protected routes
+router.post('/logout', authenticate, authController.logout);
+
+module.exports = router;
