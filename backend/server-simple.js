@@ -65,14 +65,17 @@ const log = (level, message, meta = {}) => {
 // In-memory storage for demo (replace with database in production)
 const users = new Map();
 const records = new Map();
+const otpSessions = new Map(); // Store OTP sessions
 
 // Demo admin user
 const adminUser = {
     id: 'admin-1',
     email: 'admin@finance.com',
+    phone: '+1234567890',
     name: 'Admin User',
     role: 'admin',
-    password: '$2b$10$rQZ8kHWKtGkVQ7K5nGzGxeJ7vQZ8kHWKtGkVQ7K5nGzGxeJ7vQZ8kH' // 'admin123'
+    password: '$2b$10$rQZ8kHWKtGkVQ7K5nGzGxeJ7vQZ8kHWKtGkVQ7K5nGzGxeJ7vQZ8kH', // 'admin123'
+    verified: true
 };
 users.set(adminUser.email, adminUser);
 
@@ -139,34 +142,50 @@ app.get('/api/docs', (req, res) => {
             { path: '/', method: 'GET', description: 'API information' },
             { path: '/api/health', method: 'GET', description: 'Health check' },
             { path: '/api/docs', method: 'GET', description: 'API documentation' },
-            { path: '/api/auth/login', method: 'POST', description: 'User login' },
-            { path: '/api/auth/register', method: 'POST', description: 'User registration' },
+            { path: '/api/auth/login', method: 'POST', description: 'User login (sends OTP)' },
+            { path: '/api/auth/register', method: 'POST', description: 'User registration (sends OTP)' },
+            { path: '/api/auth/verify-otp', method: 'POST', description: 'Verify OTP and get tokens' },
+            { path: '/api/auth/resend-otp', method: 'POST', description: 'Resend OTP' },
             { path: '/api/auth/me', method: 'GET', description: 'Get current user (requires auth)' },
             { path: '/api/records', method: 'GET', description: 'Get records (requires auth)' },
             { path: '/api/records', method: 'POST', description: 'Create record (requires auth)' },
             { path: '/api/dashboard/stats', method: 'GET', description: 'Get dashboard stats (requires auth)' }
-        ]
+        ],
+        demoCredentials: {
+            email: 'admin@finance.com',
+            phone: '+1234567890',
+            password: 'admin123',
+            otp: '123456'
+        }
     });
 });
 
 // Authentication routes
 app.post('/api/auth/login', async (req, res) => {
     try {
-        log('info', 'Login attempt', { email: req.body.email });
-        const { email, password } = req.body;
+        log('info', 'Login attempt', { identifier: req.body.identifier });
+        const { identifier, password } = req.body;
 
-        if (!email || !password) {
+        if (!identifier || !password) {
             return res.status(400).json({
                 error: 'Validation Error',
-                message: 'Email and password are required'
+                message: 'Email/phone and password are required'
             });
         }
 
-        const user = users.get(email);
+        // Find user by email or phone
+        let user = null;
+        for (const [email, userData] of users.entries()) {
+            if (userData.email === identifier || userData.phone === identifier) {
+                user = userData;
+                break;
+            }
+        }
+
         if (!user) {
             return res.status(401).json({
                 error: 'Authentication Failed',
-                message: 'Invalid email or password'
+                message: 'Invalid credentials'
             });
         }
 
@@ -176,32 +195,37 @@ app.post('/api/auth/login', async (req, res) => {
         if (!isValidPassword) {
             return res.status(401).json({
                 error: 'Authentication Failed',
-                message: 'Invalid email or password'
+                message: 'Invalid credentials'
             });
         }
 
-        const token = jwt.sign(
-            {
-                id: user.id,
-                email: user.email,
-                role: user.role
-            },
-            config.jwtSecret,
-            { expiresIn: config.jwtExpires }
-        );
+        // Generate OTP (for demo, always use 123456)
+        const otp = '123456';
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
 
-        log('info', 'Login successful', { userId: user.id, email: user.email });
+        // Store OTP session
+        const otpSession = {
+            identifier,
+            otp,
+            expiresAt,
+            purpose: 'LOGIN',
+            userId: user.id,
+            verified: false
+        };
 
+        // Store in memory (in production, use Redis)
+        otpSessions.set(identifier, otpSession);
+
+        log('info', 'OTP generated for login', { identifier, otp: '***' });
+
+        // Return success with identifier and expiry (frontend expects this format)
         res.json({
             success: true,
-            message: 'Login successful',
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role
-            },
-            token
+            message: 'OTP sent to your email and phone',
+            data: {
+                identifier,
+                expiresAt
+            }
         });
     } catch (error) {
         log('error', 'Login error', { error: error.message });
@@ -215,12 +239,12 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
     try {
         log('info', 'Registration attempt', { email: req.body.email });
-        const { email, password, name } = req.body;
+        const { email, password, name, phone } = req.body;
 
-        if (!email || !password || !name) {
+        if (!email || !password || !name || !phone) {
             return res.status(400).json({
                 error: 'Validation Error',
-                message: 'Email, password, and name are required'
+                message: 'Email, password, name, and phone are required'
             });
         }
 
@@ -236,23 +260,38 @@ app.post('/api/auth/register', async (req, res) => {
             id: `user-${Date.now()}`,
             email,
             name,
+            phone,
             role: 'user',
             password: hashedPassword,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            verified: false
         };
 
         users.set(email, newUser);
 
-        log('info', 'Registration successful', { userId: newUser.id, email: newUser.email });
+        // Generate OTP for registration
+        const otp = '123456';
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+        const otpSession = {
+            identifier: email,
+            otp,
+            expiresAt,
+            purpose: 'REGISTER',
+            userId: newUser.id,
+            verified: false
+        };
+
+        otpSessions.set(email, otpSession);
+
+        log('info', 'Registration successful, OTP generated', { userId: newUser.id, email: newUser.email });
 
         res.status(201).json({
             success: true,
-            message: 'Registration successful',
-            user: {
-                id: newUser.id,
-                email: newUser.email,
-                name: newUser.name,
-                role: newUser.role
+            message: 'Registration successful. OTP sent to your email and phone',
+            data: {
+                identifier: email,
+                expiresAt
             }
         });
     } catch (error) {
@@ -260,6 +299,180 @@ app.post('/api/auth/register', async (req, res) => {
         res.status(500).json({
             error: 'Internal Server Error',
             message: 'Registration failed'
+        });
+    }
+});
+
+app.post('/api/auth/verify-otp', async (req, res) => {
+    try {
+        log('info', 'OTP verification attempt', { identifier: req.body.identifier });
+        const { identifier, otp, purpose } = req.body;
+
+        if (!identifier || !otp || !purpose) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'Identifier, OTP, and purpose are required'
+            });
+        }
+
+        const otpSession = otpSessions.get(identifier);
+        if (!otpSession) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'OTP session not found or expired'
+            });
+        }
+
+        if (otpSession.purpose !== purpose) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'Invalid OTP purpose'
+            });
+        }
+
+        if (new Date() > new Date(otpSession.expiresAt)) {
+            otpSessions.delete(identifier);
+            return res.status(400).json({
+                error: 'Expired',
+                message: 'OTP has expired'
+            });
+        }
+
+        if (otpSession.otp !== otp) {
+            return res.status(400).json({
+                error: 'Invalid OTP',
+                message: 'The OTP you entered is incorrect'
+            });
+        }
+
+        // Find user
+        let user = null;
+        for (const [email, userData] of users.entries()) {
+            if (userData.id === otpSession.userId) {
+                user = userData;
+                break;
+            }
+        }
+
+        if (!user) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'User not found'
+            });
+        }
+
+        // Mark user as verified if registering
+        if (purpose === 'REGISTER') {
+            user.verified = true;
+            users.set(user.email, user);
+        }
+
+        // Generate tokens
+        const accessToken = jwt.sign(
+            {
+                id: user.id,
+                email: user.email,
+                role: user.role
+            },
+            config.jwtSecret,
+            { expiresIn: config.jwtExpires }
+        );
+
+        const refreshToken = jwt.sign(
+            {
+                id: user.id,
+                type: 'refresh'
+            },
+            config.jwtSecret,
+            { expiresIn: '7d' }
+        );
+
+        // Clean up OTP session
+        otpSessions.delete(identifier);
+
+        log('info', 'OTP verification successful', { userId: user.id, purpose });
+
+        res.json({
+            success: true,
+            message: 'OTP verified successfully',
+            data: {
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    role: user.role,
+                    phone: user.phone
+                },
+                accessToken,
+                refreshToken
+            }
+        });
+    } catch (error) {
+        log('error', 'OTP verification error', { error: error.message });
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'OTP verification failed'
+        });
+    }
+});
+
+app.post('/api/auth/resend-otp', async (req, res) => {
+    try {
+        const { identifier, purpose } = req.body;
+
+        if (!identifier || !purpose) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'Identifier and purpose are required'
+            });
+        }
+
+        // Generate new OTP
+        const otp = '123456';
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+        // Find user to get userId
+        let userId = null;
+        for (const [email, userData] of users.entries()) {
+            if (userData.email === identifier || userData.phone === identifier) {
+                userId = userData.id;
+                break;
+            }
+        }
+
+        if (!userId) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'User not found'
+            });
+        }
+
+        const otpSession = {
+            identifier,
+            otp,
+            expiresAt,
+            purpose,
+            userId,
+            verified: false
+        };
+
+        otpSessions.set(identifier, otpSession);
+
+        log('info', 'OTP resent', { identifier, purpose });
+
+        res.json({
+            success: true,
+            message: 'OTP resent successfully',
+            data: {
+                identifier,
+                expiresAt
+            }
+        });
+    } catch (error) {
+        log('error', 'Resend OTP error', { error: error.message });
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to resend OTP'
         });
     }
 });
