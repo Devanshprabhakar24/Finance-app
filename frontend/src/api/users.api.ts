@@ -15,8 +15,18 @@ export interface UserFilters {
 
 export interface UpdateUserPayload {
   name?: string;
-  role?: 'ADMIN' | 'ANALYST' | 'VIEWER';
+  role?: 'ADMIN' | 'ANALYST' | 'USER';
   status?: 'ACTIVE' | 'INACTIVE';
+}
+
+/**
+ * Get all users (simple list for dropdowns) - Admin/Analyst only
+ */
+export async function getAllUsers() {
+  const response = await apiClient.get('/users', {
+    params: { limit: 1000 }, // Get all users
+  });
+  return response.data;
 }
 
 /**
@@ -42,7 +52,7 @@ export async function getUser(id: string): Promise<{ data: User }> {
  */
 export async function updateUserRole(
   id: string,
-  role: 'ADMIN' | 'ANALYST' | 'VIEWER'
+  role: 'ADMIN' | 'ANALYST' | 'USER'
 ): Promise<{ data: User }> {
   const response = await apiClient.patch<{ data: User }>(`/users/${id}/role`, { role });
   return response.data;

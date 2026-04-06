@@ -7,7 +7,7 @@
 export const ROLES = {
   ADMIN: 'ADMIN',
   ANALYST: 'ANALYST',
-  VIEWER: 'VIEWER',
+  USER: 'USER',
 } as const;
 
 export type Role = typeof ROLES[keyof typeof ROLES];
@@ -17,6 +17,7 @@ export const PERMISSIONS = {
   [ROLES.ADMIN]: [
     'view:dashboard',
     'view:records',
+    'view:records-page', // Separate page for managing all records
     'create:records',
     'edit:records',
     'delete:records',
@@ -25,18 +26,26 @@ export const PERMISSIONS = {
     'manage:users',
     'view:profile',
     'edit:profile',
+    'view:all',
   ],
   [ROLES.ANALYST]: [
     'view:dashboard',
     'view:records',
+    'view:records-page', // Can view records page (read-only)
     'view:analytics',
     'view:profile',
     'edit:profile',
+    'view:all',
   ],
-  [ROLES.VIEWER]: [
-    'view:dashboard',
+  [ROLES.USER]: [
+    'view:dashboard', // Users see their records on dashboard only
+    'view:records', // Can view their own records (on dashboard)
+    'create:records',
+    'edit:records',
+    'delete:records',
     'view:profile',
     'edit:profile',
+    // NOTE: No 'view:records-page' - users don't see separate Transactions page
   ],
 } as const;
 

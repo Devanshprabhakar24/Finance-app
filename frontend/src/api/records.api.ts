@@ -13,14 +13,16 @@ export interface CreateRecordPayload {
   date: string;
   notes?: string;
   attachmentUrl?: string;
+  userId?: string; // Admin can specify which user the record belongs to
 }
 
 export type UpdateRecordPayload = Partial<CreateRecordPayload>;
 
 /**
  * Get paginated list of records with filters
+ * Admin/Analyst can pass userId query param to filter by user
  */
-export async function getRecords(filters?: RecordFilters): Promise<RecordListResponse> {
+export async function getRecords(filters?: RecordFilters & { userId?: string }): Promise<RecordListResponse> {
   const response = await apiClient.get<RecordListResponse>('/records', {
     params: filters,
   });
@@ -29,6 +31,7 @@ export async function getRecords(filters?: RecordFilters): Promise<RecordListRes
 
 /**
  * Create new record
+ * Admin can include userId in payload to create for any user
  */
 export async function createRecord(data: CreateRecordPayload): Promise<RecordResponse> {
   const response = await apiClient.post<RecordResponse>('/records', data);

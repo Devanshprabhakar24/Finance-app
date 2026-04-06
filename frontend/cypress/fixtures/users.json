@@ -7,8 +7,8 @@
     "identifier": "analyst@finance.dev",
     "password": "Demo@12345"
   },
-  "viewer": {
-    "identifier": "viewer@finance.dev",
+  "user": {
+    "identifier": "user@finance.dev",
     "password": "Demo@12345"
   },
   "invalid": {

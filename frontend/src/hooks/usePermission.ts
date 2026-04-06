@@ -1,5 +1,5 @@
 import { useAuthStore } from '@/store/auth.store';
-import { PERMISSIONS } from '@/utils/constants';
+import { PERMISSIONS, ROLES } from '@/utils/constants';
 
 /**
  * Permission hook for role-based access control
@@ -30,5 +30,25 @@ export function usePermission() {
     return userPermissions.includes(permission);
   };
 
-  return { can };
+  // Convenience role checks
+  const isAdmin = user?.role === ROLES.ADMIN;
+  const isAnalyst = user?.role === ROLES.ANALYST;
+  const isUser = user?.role === ROLES.USER;
+
+  // Permission shortcuts
+  const canCreate = can('create:records');
+  const canEdit = can('edit:records');
+  const canDelete = can('delete:records');
+  const canViewAll = can('view:all');
+
+  return { 
+    can, 
+    isAdmin, 
+    isAnalyst, 
+    isUser,
+    canCreate,
+    canEdit,
+    canDelete,
+    canViewAll,
+  };
 }

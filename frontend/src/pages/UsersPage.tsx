@@ -29,7 +29,7 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [editRole, setEditRole] = useState<'ADMIN' | 'ANALYST' | 'VIEWER'>('VIEWER');
+  const [editRole, setEditRole] = useState<'ADMIN' | 'ANALYST' | 'USER'>('USER');
   const [editStatus, setEditStatus] = useState<'ACTIVE' | 'INACTIVE'>('ACTIVE');
 
   // Debounce search input
@@ -119,7 +119,7 @@ export default function UsersPage() {
         return 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400';
       case 'ANALYST':
         return 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400';
-      case 'VIEWER':
+      case 'USER':
         return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
       default:
         return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400';
@@ -174,7 +174,7 @@ export default function UsersPage() {
                 <option value="">All Roles</option>
                 <option value="ADMIN">Admin</option>
                 <option value="ANALYST">Analyst</option>
-                <option value="VIEWER">Viewer</option>
+                <option value="USER">User</option>
               </select>
             </div>
           </div>
@@ -390,8 +390,8 @@ export default function UsersPage() {
                   onChange={(e) => setEditRole(e.target.value as any)}
                   className="input-field"
                 >
-                  <option value="VIEWER">Viewer - Can only view dashboard data</option>
-                  <option value="ANALYST">Analyst - Can view records and access insights</option>
+                  <option value="USER">User - Can manage their own records</option>
+                  <option value="ANALYST">Analyst - Can view all records (read-only)</option>
                   <option value="ADMIN">Admin - Full management access</option>
                 </select>
               </div>

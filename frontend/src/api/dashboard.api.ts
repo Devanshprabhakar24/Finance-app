@@ -43,36 +43,40 @@ export interface RecentRecord {
 
 /**
  * Get dashboard summary statistics
+ * Admin/Analyst can pass userId to view specific user's stats
  */
-export async function getSummary(params?: { from?: string; to?: string }) {
+export async function getSummary(params?: { from?: string; to?: string; userId?: string }) {
   const response = await apiClient.get('/dashboard/summary', { params });
   return response.data;
 }
 
 /**
  * Get category breakdown
+ * Admin/Analyst can pass userId to view specific user's breakdown
  */
-export async function getCategoryBreakdown(params?: { from?: string; to?: string }) {
+export async function getCategoryBreakdown(params?: { from?: string; to?: string; userId?: string }) {
   const response = await apiClient.get('/dashboard/by-category', { params });
   return response.data;
 }
 
 /**
  * Get monthly trends
+ * Admin/Analyst can pass userId to view specific user's trends
  */
-export async function getMonthlyTrends(year?: number) {
+export async function getMonthlyTrends(year?: number, userId?: string) {
   const response = await apiClient.get('/dashboard/trends', {
-    params: { year },
+    params: { year, userId },
   });
   return response.data;
 }
 
 /**
  * Get recent transactions
+ * Admin/Analyst can pass userId to view specific user's transactions
  */
-export async function getRecentTransactions(limit: number = 10) {
+export async function getRecentTransactions(limit: number = 10, userId?: string) {
   const response = await apiClient.get('/dashboard/recent', {
-    params: { limit },
+    params: { limit, userId },
   });
   return response.data;
 }

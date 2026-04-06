@@ -1,5 +1,5 @@
 // Central types file
-export type UserRole = 'ADMIN' | 'ANALYST' | 'VIEWER';
+export type UserRole = 'ADMIN' | 'ANALYST' | 'USER';
 export type UserStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface User {

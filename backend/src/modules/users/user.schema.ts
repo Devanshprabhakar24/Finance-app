@@ -33,8 +33,8 @@ export const userRegistrationSchema = z.object({
  */
 export const adminCreateUserSchema = userRegistrationSchema.extend({
   role: z
-    .enum(['ADMIN', 'ANALYST', 'VIEWER'], {
-      errorMap: () => ({ message: 'Role must be ADMIN, ANALYST, or VIEWER' }),
+    .enum(['ADMIN', 'ANALYST', 'USER'], {
+      errorMap: () => ({ message: 'Role must be ADMIN, ANALYST, or USER' }),
     })
     .optional(),
 });
@@ -61,8 +61,8 @@ export const updateProfileSchema = z.object({
 });
 
 export const updateRoleSchema = z.object({
-  role: z.enum(['ADMIN', 'ANALYST', 'VIEWER'], {
-    errorMap: () => ({ message: 'Role must be ADMIN, ANALYST, or VIEWER' }),
+  role: z.enum(['ADMIN', 'ANALYST', 'USER'], {
+    errorMap: () => ({ message: 'Role must be ADMIN, ANALYST, or USER' }),
   }),
 });
 

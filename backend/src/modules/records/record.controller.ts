@@ -10,7 +10,12 @@ import { ValidationError } from '../../middleware/errorHandler';
  */
 export const createRecord = asyncHandler(async (req: Request, res: Response) => {
   const data: CreateRecordInput = req.body;
-  const record = await recordService.createRecord(data, req.user!._id.toString());
+  const record = await recordService.createRecord(
+    data,
+    req.targetUserId || req.user!._id.toString(),
+    req.user!.role,
+    req.user!._id.toString()
+  );
   sendSuccess(res, 'Financial record created successfully', record, undefined, 201);
 });
 
@@ -19,7 +24,11 @@ export const createRecord = asyncHandler(async (req: Request, res: Response) => 
  */
 export const getAllRecords = asyncHandler(async (req: Request, res: Response) => {
   const filters = req.query as unknown as RecordFilterInput;
-  const result = await recordService.getAllRecords(filters);
+  const result = await recordService.getAllRecords(
+    filters,
+    req.targetUserId,
+    req.user!.role
+  );
   sendSuccess(res, 'Financial records retrieved successfully', result.data, result.meta);
 });
 
@@ -27,7 +36,11 @@ export const getAllRecords = asyncHandler(async (req: Request, res: Response) =>
  * GET /api/records/:id
  */
 export const getRecordById = asyncHandler(async (req: Request, res: Response) => {
-  const record = await recordService.getRecordById(req.params.id);
+  const record = await recordService.getRecordById(
+    req.params.id,
+    req.user!._id.toString(),
+    req.user!.role
+  );
   sendSuccess(res, 'Financial record retrieved successfully', record);
 });
 
@@ -39,7 +52,8 @@ export const updateRecord = asyncHandler(async (req: Request, res: Response) => 
   const record = await recordService.updateRecord(
     req.params.id,
     data,
-    req.user!._id.toString()
+    req.user!._id.toString(),
+    req.user!.role
   );
   sendSuccess(res, 'Financial record updated successfully', record);
 });
@@ -48,7 +62,11 @@ export const updateRecord = asyncHandler(async (req: Request, res: Response) => 
  * DELETE /api/records/:id
  */
 export const deleteRecord = asyncHandler(async (req: Request, res: Response) => {
-  await recordService.deleteRecord(req.params.id, req.user!._id.toString());
+  await recordService.deleteRecord(
+    req.params.id,
+    req.user!._id.toString(),
+    req.user!.role
+  );
   sendSuccess(res, 'Financial record deleted successfully');
 });
 

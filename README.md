@@ -18,11 +18,11 @@ Go to https://finance-app-one-zeta.vercel.app and sign in with one of the demo a
 
 ### Demo Accounts
 
-| Role    | Email           | Password      | Access                                  |
-| ------- | --------------- | ------------- | --------------------------------------- |
-| Admin   | admin@fin.com   | Admin@123     | Full access — users, records, analytics |
-| Analyst | analyst@fin.dev | Analyst123@   | Records + analytics, no user management |
-| Viewer  | Register to see   | Register to see | Read-only dashboard                     |
+| Role    | Email               | Password   | Access                                                    |
+| ------- | ------------------- | ---------- | --------------------------------------------------------- |
+| Admin   | admin@fin.com   | Admin@123 | Full access — users, records, analytics, create for users |
+| Analyst | analyst@fin.dev | Analyst123@ | Read-only records + analytics, can filter by user         |
+| User    | user@user.dev    | Devansh24@ | Can manage own records only, no Transactions page         |
 
 ### OTP Step
 
@@ -41,14 +41,18 @@ After entering your email and password, you'll be asked for a 6-digit OTP.
 
 ## Roles & Permissions
 
-| Feature                        | Admin | Analyst | Viewer |
-| ------------------------------ | ----- | ------- | ------ |
-| View dashboard                 | ✅    | ✅      | ✅     |
-| View records                   | ✅    | ✅      | ✅     |
-| Create / edit / delete records | ✅    | ❌      | ❌     |
-| View analytics                 | ✅    | ✅      | ❌     |
-| Manage users                   | ✅    | ❌      | ❌     |
-| Upload files / avatars         | ✅    | ❌      | ❌     |
+| Feature                     | Admin | Analyst | User |
+| --------------------------- | ----- | ------- | ---- |
+| View dashboard              | ✅    | ✅      | ✅   |
+| View Transactions page      | ✅    | ✅      | ❌   |
+| View all users' records     | ✅    | ✅      | ❌   |
+| View own records            | ✅    | ✅      | ✅   |
+| Create records for any user | ✅    | ❌      | ❌   |
+| Create / edit / delete own  | ✅    | ❌      | ✅   |
+| View analytics              | ✅    | ✅      | ❌   |
+| Filter analytics by user    | ✅    | ✅      | ❌   |
+| Manage users                | ✅    | ❌      | ❌   |
+| Upload files / avatars      | ✅    | ❌      | ✅   |
 
 ---
 
@@ -124,9 +128,12 @@ npm run preview  # preview production build
 ## Key Features
 
 - OTP-based login (email + SMS, test mode uses `123456`)
-- Role-based access control (Admin / Analyst / Viewer)
+- Role-based access control (Admin / Analyst / User)
 - Financial records with CRUD, search, filters, pagination
-- Dashboard analytics with charts
+- User-specific data isolation (users see only their own records)
+- Admin can create records for any user via user selector
+- Analyst can view and filter all records by user (read-only)
+- Dashboard analytics with charts and user filtering
 - File attachments on records (Cloudinary)
 - Profile picture upload
 - Dark mode UI
@@ -168,7 +175,7 @@ npm run preview  # preview production build
 | `CLOUDINARY_API_SECRET` | yes      | Cloudinary API secret                              | `OexyFd...`                        |
 | `ALLOWED_ORIGINS`       | yes      | Comma-separated allowed CORS origins               | `https://yourapp.vercel.app`       |
 | `REDIS_URL`             | no       | Redis URL for rate limiting (falls back to memory) | `redis://...`                      |
-| `ADMIN_EMAIL`           | no       | Admin account email (for initial setup)            | `admin@fin.com`                |
+| `ADMIN_EMAIL`           | no       | Admin account email (for initial setup)            | `admin@fin.com`                    |
 | `ADMIN_PASSWORD`        | no       | Admin account password                             | `Admin@123`                        |
 | `ADMIN_PHONE`           | no       | Admin phone in E.164 format                        | `+919999999999`                    |
 | `ADMIN_FULL_NAME`       | no       | Admin display name                                 | `System Administrator`             |
@@ -199,7 +206,7 @@ npm run preview  # preview production build
 | `VITE_DEMO_ADMIN_PASSWORD`   | no       | Demo admin password shown on login   | `admin123`                                  |
 | `VITE_DEMO_ANALYST_EMAIL`    | no       | Demo analyst email shown on login    | `analyst@finance.dev`                       |
 | `VITE_DEMO_ANALYST_PASSWORD` | no       | Demo analyst password shown on login | `Demo@12345`                                |
-| `VITE_DEMO_VIEWER_EMAIL`     | no       | Demo viewer email shown on login     | `viewer@finance.dev`                        |
-| `VITE_DEMO_VIEWER_PASSWORD`  | no       | Demo viewer password shown on login  | `Demo@12345`                                |
+| `VITE_DEMO_USER_EMAIL`       | no       | Demo user email shown on login       | `user@finance.dev`                          |
+| `VITE_DEMO_USER_PASSWORD`    | no       | Demo user password shown on login    | `Demo@12345`                                |
 
 > Copy `backend/.env.example` and `frontend/.env.example` as starting points.

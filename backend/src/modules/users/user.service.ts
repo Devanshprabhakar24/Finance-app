@@ -72,7 +72,7 @@ export const adminCreateUser = async (data: {
     email: data.email,
     phone: data.phone,
     passwordHash,
-    role: data.role ?? UserRole.VIEWER,
+    role: data.role ?? UserRole.USER,
     status: UserStatus.ACTIVE,
     isVerified: true,
   });

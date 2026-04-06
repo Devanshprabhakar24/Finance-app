@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getCategoryBreakdown, getMonthlyTrends } from '@/api/dashboard.api';
+import { getAllUsers } from '@/api/users.api';
 import { queryKeys } from '@/api/queryClient';
 import { useAuthStore } from '@/store/auth.store';
 import { Suspense, lazy } from 'react';
@@ -15,6 +17,8 @@ import {
   ArrowDownRight,
   Activity,
   Target,
+  Users,
+  X,
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/format';
 
@@ -31,18 +35,31 @@ const LazyBarChart = lazy(() => import('@/components/charts/LazyBarChart'));
 export default function AnalyticsPage() {
   const { user } = useAuthStore();
   const isAnalystOrAdmin = user?.role === 'ANALYST' || user?.role === 'ADMIN';
+  const isAdmin = user?.role === 'ADMIN';
+  const isAnalyst = user?.role === 'ANALYST';
 
-  // Fetch analytics data
+  // State for user filter
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+
+  // Fetch users list for admin/analyst
+  const { data: usersData } = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: getAllUsers,
+    enabled: isAdmin || isAnalyst,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fetch analytics data with userId filter
   const { data: categoryData, isLoading: categoryLoading, error: categoryError } = useQuery({
-    queryKey: queryKeys.dashboard.categories(),
-    queryFn: getCategoryBreakdown,
+    queryKey: [...queryKeys.dashboard.categories(), selectedUserId],
+    queryFn: () => getCategoryBreakdown({ userId: selectedUserId || undefined }),
     enabled: isAnalystOrAdmin,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const { data: trendsData, isLoading: trendsLoading, error: trendsError } = useQuery({
-    queryKey: queryKeys.dashboard.trends(),
-    queryFn: getMonthlyTrends,
+    queryKey: [...queryKeys.dashboard.trends(), selectedUserId],
+    queryFn: () => getMonthlyTrends(undefined, selectedUserId || undefined),
     enabled: isAnalystOrAdmin,
     staleTime: 30 * 60 * 1000, // 30 minutes - changes at most once per month
   });
@@ -216,9 +233,53 @@ export default function AnalyticsPage() {
     );
   };
 
+  // Get selected user name for display
+  const selectedUser = usersData?.data?.find((u: any) => u._id === selectedUserId);
+
   return (
     <div>
       <PageHeader title="Analytics" subtitle="Insights and trends" />
+
+      {/* User Selector for Admin/Analyst */}
+      {(isAdmin || isAnalyst) && (
+        <div className="card mb-6">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div className="flex-1 w-full md:w-auto">
+              <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                <Users className="w-4 h-4 inline mr-1" />
+                View Analytics for User
+              </label>
+              <select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="input-field w-full"
+              >
+                <option value="">All Users (Combined)</option>
+                {usersData?.data?.map((user: any) => (
+                  <option key={user._id} value={user._id}>
+                    {user.name} ({user.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedUserId && (
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-2 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg text-sm font-medium">
+                  Viewing: {selectedUser?.name}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedUserId('')}
+                  className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  title="Clear filter"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 cv-auto">

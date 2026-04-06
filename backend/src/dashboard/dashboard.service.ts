@@ -1,5 +1,7 @@
 import { FinancialRecord, RecordType } from '../modules/records/record.model';
 import { logger } from '../utils/logger';
+import { UserRole } from '../modules/users/user.model';
+import { Types } from 'mongoose';
 
 interface DateRangeFilter {
   from?: Date;
@@ -39,11 +41,17 @@ interface TopCategoryData {
 }
 
 /**
- * Build a Mongoose $match stage that respects an optional date range.
+ * Build a Mongoose $match stage that respects an optional date range and userId filter.
  * Used across all aggregations for consistency.
  */
-const buildBaseMatch = (range?: DateRangeFilter) => {
+const buildBaseMatch = (range?: DateRangeFilter, targetUserId?: string) => {
   const match: Record<string, unknown> = { isDeleted: false };
+  
+  // Add userId filter if provided
+  if (targetUserId) {
+    match.userId = new Types.ObjectId(targetUserId);
+  }
+  
   if (range?.from || range?.to) {
     const dateFilter: Record<string, Date> = {};
     if (range.from) dateFilter.$gte = range.from;
@@ -54,12 +62,22 @@ const buildBaseMatch = (range?: DateRangeFilter) => {
 };
 
 /**
- * Get dashboard summary — supports an optional date range filter.
- * Section 1.5: Uses $facet to compute summary and count in a single pipeline pass
+ * Get dashboard summary with RBAC
+ * - Admin with no targetUserId: aggregate stats across ALL users
+ * - Admin with targetUserId: stats for that specific user
+ * - Analyst with targetUserId: stats for that specific user (read only)
+ * - User: always stats for their own userId
  */
-export const getDashboardSummary = async (range?: DateRangeFilter): Promise<SummaryData> => {
+export const getDashboardSummary = async (
+  requestingUserRole: UserRole,
+  targetUserId?: string,
+  range?: DateRangeFilter
+): Promise<SummaryData> => {
+  // Build match filter based on role and targetUserId
+  const match = buildBaseMatch(range, targetUserId);
+
   const result = await FinancialRecord.aggregate([
-    { $match: buildBaseMatch(range) },
+    { $match: match },
     {
       $facet: {
         byType: [
@@ -93,7 +111,7 @@ export const getDashboardSummary = async (range?: DateRangeFilter): Promise<Summ
     }
   });
 
-  logger.info('Dashboard summary generated');
+  logger.info(`Dashboard summary generated for role: ${requestingUserRole}, targetUserId: ${targetUserId || 'all'}`);
 
   return {
     totalIncome,
@@ -112,11 +130,17 @@ export const getDashboardSummary = async (range?: DateRangeFilter): Promise<Summ
 };
 
 /**
- * Get records by category with optional date range.
+ * Get records by category with optional date range and userId filter.
  */
-export const getRecordsByCategory = async (range?: DateRangeFilter): Promise<CategoryData[]> => {
+export const getRecordsByCategory = async (
+  requestingUserRole: UserRole,
+  targetUserId?: string,
+  range?: DateRangeFilter
+): Promise<CategoryData[]> => {
+  const match = buildBaseMatch(range, targetUserId);
+
   const result = await FinancialRecord.aggregate([
-    { $match: buildBaseMatch(range) },
+    { $match: match },
     {
       $group: {
         _id: { category: '$category', type: '$type' },
@@ -141,9 +165,13 @@ export const getRecordsByCategory = async (range?: DateRangeFilter): Promise<Cat
 };
 
 /**
- * Get monthly trends for a given year (defaults to current year).
+ * Get monthly trends for a given year with userId filter.
  */
-export const getMonthlyTrends = async (year?: number): Promise<TrendData[]> => {
+export const getMonthlyTrends = async (
+  requestingUserRole: UserRole,
+  targetUserId?: string,
+  year?: number
+): Promise<TrendData[]> => {
   const targetYear = year || new Date().getFullYear();
 
   if (isNaN(targetYear) || targetYear < 2000 || targetYear > 2100) {
@@ -153,13 +181,17 @@ export const getMonthlyTrends = async (year?: number): Promise<TrendData[]> => {
   const startDate = new Date(targetYear, 0, 1);
   const endDate = new Date(targetYear, 11, 31, 23, 59, 59);
 
+  const match: Record<string, unknown> = {
+    isDeleted: false,
+    date: { $gte: startDate, $lte: endDate },
+  };
+
+  if (targetUserId) {
+    match.userId = new Types.ObjectId(targetUserId);
+  }
+
   const result = await FinancialRecord.aggregate([
-    {
-      $match: {
-        isDeleted: false,
-        date: { $gte: startDate, $lte: endDate },
-      },
-    },
+    { $match: match },
     {
       $group: {
         _id: {
@@ -199,16 +231,26 @@ export const getMonthlyTrends = async (year?: number): Promise<TrendData[]> => {
 };
 
 /**
- * Get recent records (max 20).
+ * Get recent records with userId filter (max 20).
  */
-export const getRecentRecords = async (limit: number = 10) => {
+export const getRecentRecords = async (
+  requestingUserRole: UserRole,
+  targetUserId?: string,
+  limit: number = 10
+) => {
   const maxLimit = Math.min(Math.max(1, limit), 20);
 
-  const records = await FinancialRecord.find({ isDeleted: false })
-    .select('title amount type category date createdBy createdAt')
+  const query: Record<string, unknown> = { isDeleted: false };
+  if (targetUserId) {
+    query.userId = new Types.ObjectId(targetUserId);
+  }
+
+  const records = await FinancialRecord.find(query)
+    .select('title amount type category date createdBy userId createdAt')
     .sort({ date: -1, createdAt: -1 })
     .limit(maxLimit)
     .populate('createdBy', 'name email')
+    .populate('userId', 'name email')
     .lean()
     .exec();
 
@@ -217,12 +259,14 @@ export const getRecentRecords = async (limit: number = 10) => {
 };
 
 /**
- * Get top 5 expense categories with optional date range.
+ * Get top 5 expense categories with optional date range and userId filter.
  */
 export const getTopExpenseCategories = async (
+  requestingUserRole: UserRole,
+  targetUserId?: string,
   range?: DateRangeFilter
 ): Promise<TopCategoryData[]> => {
-  const match = buildBaseMatch(range);
+  const match = buildBaseMatch(range, targetUserId);
   match.type = RecordType.EXPENSE;
 
   const result = await FinancialRecord.aggregate([

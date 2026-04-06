@@ -36,12 +36,13 @@ export const globalLimiter = rateLimit({
 });
 
 /**
- * Auth routes rate limiter — 10 requests per 15 minutes per IP.
+ * Auth routes rate limiter — 10 requests per 15 minutes per IP (production).
+ * In development: 100 requests per 15 minutes for easier testing.
  * Applied to /login and /register.
  */
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: process.env.NODE_ENV === 'production' ? 10 : 100,
   store: getStore(),
   message: {
     success: false,

@@ -169,7 +169,7 @@ function App() {
             <Route
               path="records"
               element={
-                <ProtectedRoute requiredPermission="view:records">
+                <ProtectedRoute requiredPermission="view:records-page">
                   <Suspense fallback={<DashboardPageSkeleton />}>
                     <RecordsPage />
                   </Suspense>

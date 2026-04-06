@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getRecords, createRecord, updateRecord, deleteRecord } from '@/api/records.api';
+import { getAllUsers } from '@/api/users.api';
 import { queryKeys } from '@/api/queryClient';
 import { useAuthStore } from '@/store/auth.store';
 import { usePermission } from '@/hooks/usePermission';
@@ -22,7 +23,8 @@ import {
   Upload,
   Paperclip,
   ExternalLink,
-  Loader2
+  Loader2,
+  Users
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatCurrency } from '@/utils/format';
@@ -60,7 +62,7 @@ interface FinancialRecord {
 export default function RecordsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const { can } = usePermission();
+  const { can, isAdmin, isAnalyst } = usePermission();
 
   // State
   const [search, setSearch] = useState('');
@@ -68,6 +70,7 @@ export default function RecordsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>(''); // For admin/analyst filtering
   const [page, setPage] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -86,7 +89,15 @@ export default function RecordsPage() {
   // Reset page when filters change
   useEffect(() => { 
     setPage(1); 
-  }, [debouncedSearch, typeFilter, categoryFilter, fromDate, toDate]);
+  }, [debouncedSearch, typeFilter, categoryFilter, fromDate, toDate, selectedUserId]);
+
+  // Fetch users list for admin/analyst
+  const { data: usersData } = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: getAllUsers,
+    enabled: isAdmin || isAnalyst,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Keyboard trap for modals
   useEffect(() => {
@@ -168,6 +179,7 @@ export default function RecordsPage() {
     category: '',
     date: new Date().toISOString().split('T')[0],
     notes: '',
+    userId: '', // For admin to specify which user owns the record
   });
 
   // Fetch records with search and date range
@@ -179,7 +191,8 @@ export default function RecordsPage() {
       fromDate, 
       toDate, 
       page, 
-      limit: 10 
+      limit: 10,
+      userId: selectedUserId || undefined,
     }),
     queryFn: () => getRecords({
       type: typeFilter || undefined,
@@ -189,6 +202,7 @@ export default function RecordsPage() {
       toDate: toDate || undefined,
       page,
       limit: 10,
+      userId: selectedUserId || undefined,
     }),
     staleTime: 30 * 1000, // 30 seconds - shorter for records to show updates quickly
     refetchOnWindowFocus: true, // Enable refetch on focus for records
@@ -294,12 +308,19 @@ export default function RecordsPage() {
       category: '',
       date: new Date().toISOString().split('T')[0],
       notes: '',
+      userId: '',
     });
   };
 
   const handleCreate = () => {
     if (!formData.title || !formData.amount || !formData.category) {
       toast.error('Please fill all required fields');
+      return;
+    }
+    
+    // Admin must select a user
+    if (isAdmin && !formData.userId) {
+      toast.error('Please select a user for this record');
       return;
     }
     
@@ -312,7 +333,8 @@ export default function RecordsPage() {
     // Ensure date is in proper format
     const recordData = {
       ...formData,
-      date: formData.date // Keep as YYYY-MM-DD format, backend will handle conversion
+      date: formData.date, // Keep as YYYY-MM-DD format, backend will handle conversion
+      userId: isAdmin ? formData.userId : undefined, // Only send userId if admin
     };
     
     createMutation.mutate(recordData);
@@ -516,6 +538,31 @@ export default function RecordsPage() {
 
           {/* Date Range Row */}
           <div className="flex flex-col md:flex-row gap-4">
+            {/* User Selector for Admin/Analyst */}
+            {(isAdmin || isAnalyst) && (
+              <div className="flex-1">
+                <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
+                  <Users className="w-4 h-4 inline mr-1" />
+                  Filter by User
+                </label>
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => {
+                    setSelectedUserId(e.target.value);
+                    setPage(1);
+                  }}
+                  className="input-field"
+                >
+                  <option value="">All Users</option>
+                  {usersData?.data?.map((user: any) => (
+                    <option key={user._id} value={user._id}>
+                      {user.name} ({user.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
             <div className="flex-1">
               <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">
                 From Date
@@ -547,18 +594,19 @@ export default function RecordsPage() {
                 max={new Date().toISOString().split('T')[0]}
               />
             </div>
-            {(fromDate || toDate) && (
+            {(fromDate || toDate || selectedUserId) && (
               <div className="flex items-end">
                 <button
                   type="button"
                   onClick={() => {
                     setFromDate('');
                     setToDate('');
+                    setSelectedUserId('');
                     setPage(1);
                   }}
                   className="btn-secondary whitespace-nowrap"
                 >
-                  Clear Dates
+                  Clear Filters
                 </button>
               </div>
             )}
@@ -717,6 +765,32 @@ export default function RecordsPage() {
 
             <form onSubmit={(e) => e.preventDefault()}>
               <div className="space-y-4">
+              {/* User Selector for Admin */}
+              {isAdmin && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    <Users className="w-4 h-4 inline mr-1" />
+                    Create for User *
+                  </label>
+                  <select
+                    value={formData.userId}
+                    onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+                    className="input-field"
+                    required
+                  >
+                    <option value="">Select user...</option>
+                    {usersData?.data?.map((user: any) => (
+                      <option key={user._id} value={user._id}>
+                        {user.name} ({user.email})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    This record will belong to the selected user
+                  </p>
+                </div>
+              )}
+              
               <div>
                 <label className="block text-sm font-medium mb-2">Type *</label>
                 <select

@@ -5,6 +5,7 @@ declare global {
     interface Request {
       user?: IUser;
       csrfToken?: string;
+      targetUserId?: string;
     }
   }
 }

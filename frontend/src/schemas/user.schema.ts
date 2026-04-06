@@ -62,8 +62,8 @@ export const changePasswordSchema = z.object({
  * Update User Role Schema (Admin only)
  */
 export const updateRoleSchema = z.object({
-  role: z.enum(['ADMIN', 'ANALYST', 'VIEWER'], {
-    errorMap: () => ({ message: 'Role must be ADMIN, ANALYST, or VIEWER' }),
+  role: z.enum(['ADMIN', 'ANALYST', 'USER'], {
+    errorMap: () => ({ message: 'Role must be ADMIN, ANALYST, or USER' }),
   }),
 });
 
@@ -81,7 +81,7 @@ export const updateStatusSchema = z.object({
  */
 export const userFilterSchema = z.object({
   search: z.string().optional(),
-  role: z.enum(['ADMIN', 'ANALYST', 'VIEWER']).optional(),
+  role: z.enum(['ADMIN', 'ANALYST', 'USER']).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
   page: z.number().int().positive().optional(),
   limit: z.number().int().min(1).max(100).optional(),

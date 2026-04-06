@@ -286,7 +286,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Message for VIEWER role */}
+      {/* Message for USER role without analytics access */}
       {!canViewAnalytics && (
         <div className="mt-6 card">
           <div className="text-center py-8">

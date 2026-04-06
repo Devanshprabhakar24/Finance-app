@@ -53,7 +53,7 @@ export const swaggerSpec = {
           name: { type: 'string' },
           email: { type: 'string' },
           phone: { type: 'string' },
-          role: { type: 'string', enum: ['ADMIN', 'ANALYST', 'VIEWER'] },
+          role: { type: 'string', enum: ['ADMIN', 'ANALYST', 'USER'] },
           status: { type: 'string', enum: ['ACTIVE', 'INACTIVE'] },
           isVerified: { type: 'boolean' },
           profileImage: { type: 'string' },

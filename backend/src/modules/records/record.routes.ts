@@ -2,9 +2,8 @@ import { Router } from 'express';
 import multer from 'multer';
 import * as recordController from './record.controller';
 import { authenticate } from '../../middleware/authenticate';
-import { requireRole } from '../../middleware/authorize';
+import { resolveTargetUser } from '../../middleware/authorize';
 import { validateBody, validateQuery } from '../../middleware/validate';
-import { UserRole } from '../users/user.model';
 import { createRecordSchema, updateRecordSchema, recordFilterSchema } from './record.schema';
 
 const router = Router();
@@ -22,42 +21,44 @@ const upload = multer({
   },
 });
 
+// All routes require authentication
 router.use(authenticate);
 
-// Read — ANALYST and ADMIN
+// GET /records - All authenticated users can access (RBAC in service layer)
 router.get(
   '/',
-  requireRole(UserRole.ANALYST, UserRole.ADMIN),
+  resolveTargetUser,
   validateQuery(recordFilterSchema),
   recordController.getAllRecords
 );
 
+// GET /records/:id - All authenticated users (RBAC in service layer)
 router.get(
   '/:id',
-  requireRole(UserRole.ANALYST, UserRole.ADMIN),
   recordController.getRecordById
 );
 
-// Write — ADMIN only
+// POST /records - Admin and User can create (Analyst forbidden in service)
 router.post(
   '/',
-  requireRole(UserRole.ADMIN),
+  resolveTargetUser,
   validateBody(createRecordSchema),
   recordController.createRecord
 );
 
+// PATCH /records/:id - Admin and User can update (Analyst forbidden in service)
 router.patch(
   '/:id',
-  requireRole(UserRole.ADMIN),
   validateBody(updateRecordSchema),
   recordController.updateRecord
 );
 
-router.delete('/:id', requireRole(UserRole.ADMIN), recordController.deleteRecord);
+// DELETE /records/:id - Admin and User can delete (Analyst forbidden in service)
+router.delete('/:id', recordController.deleteRecord);
 
+// POST /records/:id/attachment - Admin and User can upload
 router.post(
   '/:id/attachment',
-  requireRole(UserRole.ADMIN),
   upload.single('attachment'),
   recordController.uploadAttachment
 );

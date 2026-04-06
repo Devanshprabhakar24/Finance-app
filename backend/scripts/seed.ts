@@ -56,11 +56,11 @@ const seedDatabase = async (force = false) => {
         isVerified: true,
       },
       {
-        name: 'Viewer User',
-        email: 'viewer@finance.dev',
+        name: 'Regular User',
+        email: 'user@finance.dev',
         phone: '+913333333333',
         passwordHash,
-        role: UserRole.VIEWER,
+        role: UserRole.USER,
         status: UserStatus.ACTIVE,
         isVerified: true,
       },
@@ -118,7 +118,7 @@ const seedDatabase = async (force = false) => {
     logger.info('\n🔐 Login Credentials (all use same password):');
     logger.info(`   Admin:   ${env.admin.email ?? 'admin@finance.dev'}`);
     logger.info(`   Analyst: analyst@finance.dev`);
-    logger.info(`   Viewer:  viewer@finance.dev`);
+    logger.info(`   User:    user@finance.dev`);
     logger.info(`   Password: ${password}`);
 
     await disconnectDB();

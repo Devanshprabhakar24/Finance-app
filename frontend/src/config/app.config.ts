@@ -50,9 +50,9 @@ export const APP_CONFIG = {
       EMAIL: import.meta.env.VITE_DEMO_ANALYST_EMAIL || 'analyst@finance.dev',
       PASSWORD: import.meta.env.VITE_DEMO_ANALYST_PASSWORD || 'Demo@12345',
     },
-    VIEWER: {
-      EMAIL: import.meta.env.VITE_DEMO_VIEWER_EMAIL || 'viewer@finance.dev',
-      PASSWORD: import.meta.env.VITE_DEMO_VIEWER_PASSWORD || 'Demo@12345',
+    USER: {
+      EMAIL: import.meta.env.VITE_DEMO_USER_EMAIL || 'user@finance.dev',
+      PASSWORD: import.meta.env.VITE_DEMO_USER_PASSWORD || 'Demo@12345',
     },
   },
 } as const;

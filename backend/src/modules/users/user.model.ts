@@ -3,7 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export enum UserRole {
   ADMIN = 'ADMIN',
   ANALYST = 'ANALYST',
-  VIEWER = 'VIEWER',
+  USER = 'USER',
 }
 
 export enum UserStatus {
@@ -60,7 +60,7 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: Object.values(UserRole),
-      default: UserRole.VIEWER,
+      default: UserRole.USER,
     },
     status: {
       type: String,

@@ -14,7 +14,8 @@ export interface IFinancialRecord extends Document {
   notes?: string;
   attachmentUrl?: string;
   attachmentPublicId?: string;
-  createdBy: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId; // The user this record belongs to
+  createdBy: mongoose.Types.ObjectId; // Who created it (for admin tracking)
   /** Tracks which admin last modified this record for audit purposes */
   lastModifiedBy?: mongoose.Types.ObjectId;
   isDeleted: boolean;
@@ -64,6 +65,12 @@ const financialRecordSchema = new Schema<IFinancialRecord>(
     attachmentPublicId: {
       type: String,
     },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: false, // Temporarily optional for migration
+      index: true,
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -89,6 +96,7 @@ const financialRecordSchema = new Schema<IFinancialRecord>(
 );
 
 // Compound indexes for performance
+financialRecordSchema.index({ userId: 1, isDeleted: 1, date: -1 });
 financialRecordSchema.index({ isDeleted: 1, date: -1 });
 financialRecordSchema.index({ isDeleted: 1, type: 1, category: 1 });
 financialRecordSchema.index({ isDeleted: 1, type: 1, category: 1, date: -1 }); // For dashboard aggregations

@@ -19,7 +19,7 @@ const parseDate = (val: unknown, paramName: string): Date | undefined => {
 
 /**
  * GET /api/dashboard/summary
- * Optional query: ?from=ISO&to=ISO
+ * Optional query: ?from=ISO&to=ISO&userId=xxx
  */
 export const getSummary = asyncHandler(async (req: Request, res: Response) => {
   const from = parseDate(req.query.from, 'from');
@@ -30,6 +30,8 @@ export const getSummary = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const summary = await dashboardService.getDashboardSummary(
+    req.user!.role,
+    req.targetUserId,
     from || to ? { from, to } : undefined
   );
   sendSuccess(res, 'Dashboard summary retrieved successfully', summary);
@@ -37,13 +39,15 @@ export const getSummary = asyncHandler(async (req: Request, res: Response) => {
 
 /**
  * GET /api/dashboard/by-category
- * Optional query: ?from=ISO&to=ISO
+ * Optional query: ?from=ISO&to=ISO&userId=xxx
  */
 export const getByCategory = asyncHandler(async (req: Request, res: Response) => {
   const from = parseDate(req.query.from, 'from');
   const to = parseDate(req.query.to, 'to');
 
   const categoryData = await dashboardService.getRecordsByCategory(
+    req.user!.role,
+    req.targetUserId,
     from || to ? { from, to } : undefined
   );
   sendSuccess(res, 'Category breakdown retrieved successfully', categoryData);
@@ -51,33 +55,43 @@ export const getByCategory = asyncHandler(async (req: Request, res: Response) =>
 
 /**
  * GET /api/dashboard/trends
- * Optional query: ?year=2024
+ * Optional query: ?year=2024&userId=xxx
  */
 export const getTrends = asyncHandler(async (req: Request, res: Response) => {
   const year = req.query.year ? parseInt(req.query.year as string) : undefined;
-  const trends = await dashboardService.getMonthlyTrends(year);
+  const trends = await dashboardService.getMonthlyTrends(
+    req.user!.role,
+    req.targetUserId,
+    year
+  );
   sendSuccess(res, 'Monthly trends retrieved successfully', trends);
 });
 
 /**
  * GET /api/dashboard/recent
- * Optional query: ?limit=10 (max 20)
+ * Optional query: ?limit=10&userId=xxx (max 20)
  */
 export const getRecent = asyncHandler(async (req: Request, res: Response) => {
   const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-  const records = await dashboardService.getRecentRecords(limit);
+  const records = await dashboardService.getRecentRecords(
+    req.user!.role,
+    req.targetUserId,
+    limit
+  );
   sendSuccess(res, 'Recent records retrieved successfully', records);
 });
 
 /**
  * GET /api/dashboard/top-categories
- * Optional query: ?from=ISO&to=ISO
+ * Optional query: ?from=ISO&to=ISO&userId=xxx
  */
 export const getTopCategories = asyncHandler(async (req: Request, res: Response) => {
   const from = parseDate(req.query.from, 'from');
   const to = parseDate(req.query.to, 'to');
 
   const topCategories = await dashboardService.getTopExpenseCategories(
+    req.user!.role,
+    req.targetUserId,
     from || to ? { from, to } : undefined
   );
   sendSuccess(res, 'Top expense categories retrieved successfully', topCategories);

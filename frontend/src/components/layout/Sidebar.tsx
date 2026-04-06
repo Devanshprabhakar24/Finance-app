@@ -43,7 +43,7 @@ export function Sidebar() {
 
   const navItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Overview', permission: 'view:dashboard' },
-    { path: '/dashboard/records', icon: Receipt, label: 'Transactions', permission: 'view:records' },
+    { path: '/dashboard/records', icon: Receipt, label: 'Transactions', permission: 'view:records-page' },
     { path: '/dashboard/analytics', icon: BarChart3, label: 'Insights', permission: 'view:analytics' },
     { path: '/dashboard/users', icon: Users, label: 'Team', permission: 'view:users' },
     { path: '/dashboard/profile', icon: UserCircle, label: 'Account', permission: 'view:profile' },
