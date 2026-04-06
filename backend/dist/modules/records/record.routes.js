@@ -1,65 +1,70 @@
-const { Router  } = require('express');
-const multer = require('multer');
-const recordController = require('./record.controller');
-const { authenticate  } = require('../../middleware/authenticate');
-const { requireRole  } = require('../../middleware/authorize');
-const { validateBody, validateQuery  } = require('../../middleware/validate');
-const { UserRole  } = require('../users/user.model');
-const { createRecordSchema, updateRecordSchema, recordFilterSchema  } = require('./record.schema');
-
-const router = Router();
-
-const upload = multer({
-  storage),
-  limits: { fileSize,
-  fileFilter, file, cb) => {
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
-    if (allowed.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and PDF are allowed.'));
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
     }
-  },
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
 });
-
-router.use(authenticate);
-
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const multer_1 = __importDefault(require("multer"));
+const recordController = __importStar(require("./record.controller"));
+const authenticate_1 = require("../../middleware/authenticate");
+const authorize_1 = require("../../middleware/authorize");
+const validate_1 = require("../../middleware/validate");
+const user_model_1 = require("../users/user.model");
+const record_schema_1 = require("./record.schema");
+const router = (0, express_1.Router)();
+const upload = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+        if (allowed.includes(file.mimetype)) {
+            cb(null, true);
+        }
+        else {
+            cb(new Error('Invalid file type. Only JPEG, PNG, WebP, and PDF are allowed.'));
+        }
+    },
+});
+router.use(authenticate_1.authenticate);
 // Read — ANALYST and ADMIN
-router.get(
-  '/',
-  requireRole(UserRole.ANALYST, UserRole.ADMIN),
-  validateQuery(recordFilterSchema),
-  recordController.getAllRecords
-);
-
-router.get(
-  '/:id',
-  requireRole(UserRole.ANALYST, UserRole.ADMIN),
-  recordController.getRecordById
-);
-
+router.get('/', (0, authorize_1.requireRole)(user_model_1.UserRole.ANALYST, user_model_1.UserRole.ADMIN), (0, validate_1.validateQuery)(record_schema_1.recordFilterSchema), recordController.getAllRecords);
+router.get('/:id', (0, authorize_1.requireRole)(user_model_1.UserRole.ANALYST, user_model_1.UserRole.ADMIN), recordController.getRecordById);
 // Write — ADMIN only
-router.post(
-  '/',
-  requireRole(UserRole.ADMIN),
-  validateBody(createRecordSchema),
-  recordController.createRecord
-);
-
-router.patch(
-  '/:id',
-  requireRole(UserRole.ADMIN),
-  validateBody(updateRecordSchema),
-  recordController.updateRecord
-);
-
-router.delete('/:id', requireRole(UserRole.ADMIN), recordController.deleteRecord);
-
-router.post(
-  '/:id/attachment',
-  requireRole(UserRole.ADMIN),
-  upload.single('attachment'),
-  recordController.uploadAttachment
-);
-
-module.exports = router;
+router.post('/', (0, authorize_1.requireRole)(user_model_1.UserRole.ADMIN), (0, validate_1.validateBody)(record_schema_1.createRecordSchema), recordController.createRecord);
+router.patch('/:id', (0, authorize_1.requireRole)(user_model_1.UserRole.ADMIN), (0, validate_1.validateBody)(record_schema_1.updateRecordSchema), recordController.updateRecord);
+router.delete('/:id', (0, authorize_1.requireRole)(user_model_1.UserRole.ADMIN), recordController.deleteRecord);
+router.post('/:id/attachment', (0, authorize_1.requireRole)(user_model_1.UserRole.ADMIN), upload.single('attachment'), recordController.uploadAttachment);
+exports.default = router;

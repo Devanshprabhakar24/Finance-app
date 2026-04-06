@@ -1,49 +1,51 @@
-const { Request, Response, NextFunction  } = require('express');
-const crypto = require('crypto');
-const { UnauthorizedError  } = require('./errorHandler');
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.verifyCsrfToken = exports.generateCsrfToken = void 0;
+const crypto_1 = __importDefault(require("crypto"));
+const errorHandler_1 = require("./errorHandler");
 /**
  * Double Submit Cookie CSRF Protection
  * Generates a CSRF token and sets it in a cookie
  */
 const generateCsrfToken = (req, res, next) => {
-  // Generate CSRF token if not exists
-  if (!req.cookies.csrfToken) {
-    const token = crypto.randomBytes(32).toString('hex');
-    res.cookie('csrfToken', token, {
-      httpOnly, // Must be readable by JavaScript
-      secure: process.env.NODE_ENV === 'production',
-      sameSite,
-      maxAge, // 24 hours
-    });
-    req.csrfToken = token;
-  } else {
-    req.csrfToken = req.cookies.csrfToken;
-  }
-  next();
+    // Generate CSRF token if not exists
+    if (!req.cookies.csrfToken) {
+        const token = crypto_1.default.randomBytes(32).toString('hex');
+        res.cookie('csrfToken', token, {
+            httpOnly: false, // Must be readable by JavaScript
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        });
+        req.csrfToken = token;
+    }
+    else {
+        req.csrfToken = req.cookies.csrfToken;
+    }
+    next();
 };
-
+exports.generateCsrfToken = generateCsrfToken;
 /**
  * Verify CSRF token for state-mutating requests
  * Exempt GET, HEAD, OPTIONS
  */
 const verifyCsrfToken = (req, _res, next) => {
-  // Skip for safe methods
-  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-    return next();
-  }
-
-  // Skip for refresh token endpoint (uses httpOnly cookie only)
-  if (req.path === '/api/auth/refresh-token') {
-    return next();
-  }
-
-  const tokenFromCookie = req.cookies.csrfToken;
-  const tokenFromHeader = req.headers['x-csrf-token'] as string;
-
-  if (!tokenFromCookie || !tokenFromHeader || tokenFromCookie !== tokenFromHeader) {
-    throw new UnauthorizedError('Invalid CSRF token');
-  }
-
-  next();
+    // Skip for safe methods
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+        return next();
+    }
+    // Skip for refresh token endpoint (uses httpOnly cookie only)
+    if (req.path === '/api/auth/refresh-token') {
+        return next();
+    }
+    const tokenFromCookie = req.cookies.csrfToken;
+    const tokenFromHeader = req.headers['x-csrf-token'];
+    if (!tokenFromCookie || !tokenFromHeader || tokenFromCookie !== tokenFromHeader) {
+        throw new errorHandler_1.UnauthorizedError('Invalid CSRF token');
+    }
+    next();
 };
+exports.verifyCsrfToken = verifyCsrfToken;

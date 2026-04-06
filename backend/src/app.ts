@@ -140,7 +140,7 @@ export const createApp = (): Application => {
   app.use(requestTimeout(10000));  // Global fallback
 
   // Section 9.1: Health check with memory stats
-  app.get('/health', (_req, res) => {
+  app.get('/api/health', (_req, res) => {
     const mem = process.memoryUsage();
     res.json({
       status: 'ok',

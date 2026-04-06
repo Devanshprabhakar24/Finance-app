@@ -1,91 +1,64 @@
-const { Router  } = require('express');
-const authController = require('./auth.controller');
-const { validateBody  } = require('../../middleware/validate');
-const { authenticate  } = require('../../middleware/authenticate');
-const { authLimiter, otpLimiter, availabilityLimiter  } = require('../../middleware/rateLimiter');
-const { noCache  } = require('../../middleware/cacheControl');
-const { userRegistrationSchema  } = require('../users/user.schema');
-const { loginSchema,
-  verifyOtpSchema,
-  resendOtpSchema,
-  refreshTokenSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema,
- } = require('./auth.schema');
-
-const router = Router();
-
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authController = __importStar(require("./auth.controller"));
+const validate_1 = require("../../middleware/validate");
+const authenticate_1 = require("../../middleware/authenticate");
+const rateLimiter_1 = require("../../middleware/rateLimiter");
+const cacheControl_1 = require("../../middleware/cacheControl");
+const user_schema_1 = require("../users/user.schema");
+const auth_schema_1 = require("./auth.schema");
+const router = (0, express_1.Router)();
 // Section 2.1: No caching for auth routes
-router.use(noCache);
-
+router.use(cacheControl_1.noCache);
 // Public routes with rate limiting
-router.post(
-  '/register',
-  authLimiter,
-  validateBody(userRegistrationSchema),
-  authController.register
-);
-
+router.post('/register', rateLimiter_1.authLimiter, (0, validate_1.validateBody)(user_schema_1.userRegistrationSchema), authController.register);
 // Check email/phone availability
-router.post(
-  '/check-availability',
-  availabilityLimiter,
-  authController.checkAvailability
-);
-
-router.post(
-  '/verify-otp',
-  authLimiter,
-  validateBody(verifyOtpSchema),
-  authController.verifyOtp
-);
-
-router.post(
-  '/login',
-  authLimiter,
-  validateBody(loginSchema),
-  authController.login
-);
-
-router.post(
-  '/resend-otp',
-  otpLimiter,
-  validateBody(resendOtpSchema),
-  authController.resendOtp
-);
-
-router.post(
-  '/send-registration-otp',
-  otpLimiter,
-  authController.sendRegistrationOtp
-);
-
-router.post(
-  '/refresh',
-  validateBody(refreshTokenSchema),
-  authController.refreshToken
-);
-
-router.post(
-  '/forgot-password',
-  authLimiter,
-  validateBody(forgotPasswordSchema),
-  authController.forgotPassword
-);
-
-router.post(
-  '/reset-password',
-  authLimiter,
-  validateBody(resetPasswordSchema),
-  authController.resetPassword
-);
-
+router.post('/check-availability', rateLimiter_1.availabilityLimiter, authController.checkAvailability);
+router.post('/verify-otp', rateLimiter_1.authLimiter, (0, validate_1.validateBody)(auth_schema_1.verifyOtpSchema), authController.verifyOtp);
+router.post('/login', rateLimiter_1.authLimiter, (0, validate_1.validateBody)(auth_schema_1.loginSchema), authController.login);
+router.post('/resend-otp', rateLimiter_1.otpLimiter, (0, validate_1.validateBody)(auth_schema_1.resendOtpSchema), authController.resendOtp);
+router.post('/send-registration-otp', rateLimiter_1.otpLimiter, authController.sendRegistrationOtp);
+router.post('/refresh', (0, validate_1.validateBody)(auth_schema_1.refreshTokenSchema), authController.refreshToken);
+router.post('/forgot-password', rateLimiter_1.authLimiter, (0, validate_1.validateBody)(auth_schema_1.forgotPasswordSchema), authController.forgotPassword);
+router.post('/reset-password', rateLimiter_1.authLimiter, (0, validate_1.validateBody)(auth_schema_1.resetPasswordSchema), authController.resetPassword);
 // Test email endpoint (development only)
 if (process.env.NODE_ENV !== 'production') {
-  router.post('/test-email', authController.testEmail);
+    router.post('/test-email', authController.testEmail);
 }
-
 // Protected routes
-router.post('/logout', authenticate, authController.logout);
-
-module.exports = router;
+router.post('/logout', authenticate_1.authenticate, authController.logout);
+exports.default = router;
