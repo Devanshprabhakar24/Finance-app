@@ -4,7 +4,7 @@ import { Mail, Phone, CheckCircle, ArrowLeft, Shield, AlertCircle } from 'lucide
 import toast from 'react-hot-toast';
 import { z } from 'zod';
 import { useDebounce } from '@/hooks/useDebounce';
-import { checkAvailability } from '@/api/auth';
+import { checkAvailability } from '@/api/auth.api';
 
 const emailSchema = z.string().email('Invalid email format');
 const phoneSchema = z.string().regex(/^\+[1-9]\d{1,14}$/, 'Phone must be in E.164 format (e.g., +911234567890)');

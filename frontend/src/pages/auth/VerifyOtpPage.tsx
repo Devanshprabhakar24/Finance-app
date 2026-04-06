@@ -67,10 +67,12 @@ export default function VerifyOtpPage() {
   const handleOtpChange = (value: string) => {
     setOtp(value);
     if (value.length === OTP_CONFIG.LENGTH) {
-      // Auto-submit when complete
-      setTimeout(() => {
-        verifyMutation.mutate();
-      }, 100);
+      // Fix: Pass value directly to avoid race condition
+      verifyMutation.mutate({
+        identifier,
+        otp: value, // Use the value parameter directly
+        purpose,
+      });
     }
   };
 

@@ -1,6 +1,5 @@
 import { useUIStore } from '@/store/ui.store';
 import { Menu } from 'lucide-react';
-import { cn } from '@/utils/cn';
 
 interface HeaderProps {
   title?: string;
@@ -9,7 +8,7 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle, action }: HeaderProps) {
-  const { sidebarCollapsed, toggleMobileMenu } = useUIStore();
+  const { toggleMobileMenu } = useUIStore();
 
   return (
     <header className="h-16 bg-slate-900/50 backdrop-blur-xl border-b border-slate-800 flex items-center justify-between px-6">

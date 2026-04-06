@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,6 +32,13 @@ export default function RegisterCompletePage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const { email, phone } = location.state || {};
+
+  // Fix: Move redirect to useEffect to avoid side effect during render
+  useEffect(() => {
+    if (!email || !phone) {
+      navigate('/register', { replace: true });
+    }
+  }, [email, phone, navigate]);
 
   const {
     register,
@@ -70,10 +77,13 @@ export default function RegisterCompletePage() {
     registerMutation.mutate(data);
   };
 
-  // Redirect if no email/phone from step 1 - MUST be after hooks
+  // Show loading state while redirecting if no email/phone
   if (!email || !phone) {
-    navigate('/register');
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#0A0F1E] via-slate-900 to-[#0A0F1E] flex items-center justify-center">
+        <div className="text-white">Redirecting...</div>
+      </div>
+    );
   }
 
   return (
@@ -182,7 +192,7 @@ export default function RegisterCompletePage() {
             <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700">
               <p className="text-xs text-slate-400 text-center">
                 After clicking, we'll send OTP codes to your email and phone for verification
-                {process.env.NODE_ENV === 'development' && (
+                {import.meta.env.DEV && (
                   <span className="block text-yellow-400 font-medium mt-1">
                     💡 Test Mode: You can use "123456" as OTP
                   </span>

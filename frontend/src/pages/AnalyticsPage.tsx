@@ -407,10 +407,16 @@ export default function AnalyticsPage() {
                         <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                       </div>
                       <span className="font-semibold text-slate-900 dark:text-white">
-                        {new Date(trend.month).toLocaleDateString('en-US', {
-                          month: 'long',
-                          year: 'numeric',
-                        })}
+                        {(() => {
+                          try {
+                            return new Date(trend.month + 'T00:00:00').toLocaleDateString('en-US', {
+                              month: 'long',
+                              year: 'numeric',
+                            });
+                          } catch {
+                            return trend.month || 'Unknown';
+                          }
+                        })()}
                       </span>
                     </div>
                     <div className="flex items-center gap-4">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getRecords, createRecord, updateRecord, deleteRecord } from '@/api/records.api';
@@ -69,6 +69,11 @@ export default function RecordsPage() {
   const [selectedRecord, setSelectedRecord] = useState<FinancialRecord | null>(null);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
+  // Modal refs for keyboard trap
+  const createModalRef = useRef<HTMLDivElement>(null);
+  const editModalRef = useRef<HTMLDivElement>(null);
+  const deleteModalRef = useRef<HTMLDivElement>(null);
+
   // Debounce search input
   const debouncedSearch = useDebounce(search, 300);
 
@@ -76,6 +81,78 @@ export default function RecordsPage() {
   useEffect(() => { 
     setPage(1); 
   }, [debouncedSearch, typeFilter, categoryFilter, fromDate, toDate]);
+
+  // Keyboard trap for modals
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showCreateModal) {
+          setShowCreateModal(false);
+          resetForm();
+        } else if (showEditModal) {
+          setShowEditModal(false);
+          setSelectedRecord(null);
+          resetForm();
+        } else if (showDeleteModal) {
+          setShowDeleteModal(false);
+          setSelectedRecord(null);
+        }
+      }
+
+      if (e.key === 'Tab') {
+        const activeModal = showCreateModal ? createModalRef.current : 
+                           showEditModal ? editModalRef.current : 
+                           showDeleteModal ? deleteModalRef.current : null;
+
+        if (activeModal) {
+          const focusableElements = activeModal.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          const firstElement = focusableElements[0] as HTMLElement;
+          const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+          if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+              e.preventDefault();
+              lastElement?.focus();
+            }
+          } else {
+            if (document.activeElement === lastElement) {
+              e.preventDefault();
+              firstElement?.focus();
+            }
+          }
+        }
+      }
+    };
+
+    if (showCreateModal || showEditModal || showDeleteModal) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showCreateModal, showEditModal, showDeleteModal]);
+
+  // Focus management for modals
+  useEffect(() => {
+    if (showCreateModal && createModalRef.current) {
+      const firstInput = createModalRef.current.querySelector('input, select, textarea') as HTMLElement;
+      firstInput?.focus();
+    }
+  }, [showCreateModal]);
+
+  useEffect(() => {
+    if (showEditModal && editModalRef.current) {
+      const firstInput = editModalRef.current.querySelector('input, select, textarea') as HTMLElement;
+      firstInput?.focus();
+    }
+  }, [showEditModal]);
+
+  useEffect(() => {
+    if (showDeleteModal && deleteModalRef.current) {
+      const cancelButton = deleteModalRef.current.querySelector('button') as HTMLElement;
+      cancelButton?.focus();
+    }
+  }, [showDeleteModal]);
 
   // Form state
   const [formData, setFormData] = useState<CreateRecordPayload>({
@@ -220,6 +297,12 @@ export default function RecordsPage() {
       return;
     }
     
+    // Fix: Validate amount is positive
+    if (!formData.amount || formData.amount <= 0) {
+      toast.error('Amount must be a positive number');
+      return;
+    }
+    
     // Ensure date is in proper format
     const recordData = {
       ...formData,
@@ -244,6 +327,12 @@ export default function RecordsPage() {
 
   const handleUpdate = () => {
     if (!selectedRecord) return;
+    
+    // Fix: Validate amount is positive
+    if (!formData.amount || formData.amount <= 0) {
+      toast.error('Amount must be a positive number');
+      return;
+    }
     
     // Ensure date is in proper format
     const recordData = {
@@ -304,8 +393,9 @@ export default function RecordsPage() {
 
       queryClient.invalidateQueries({ queryKey: ['records'] });
       toast.success('Attachment uploaded successfully');
-    } catch (error: ApiError) {
-      toast.error(error.response?.data?.message || 'Failed to upload attachment');
+    } catch (error) {
+      const apiError = error as ApiError;
+      toast.error(apiError.response?.data?.message || 'Failed to upload attachment');
     } finally {
       setUploadingAttachment(false);
       // Reset the file input
@@ -596,9 +686,9 @@ export default function RecordsPage() {
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div ref={createModalRef} className="card max-w-lg w-full max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="create-modal-title">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold">Create Record</h3>
+              <h3 id="create-modal-title" className="text-xl font-semibold">Create Record</h3>
               <button
                 onClick={() => {
                   setShowCreateModal(false);
@@ -710,9 +800,9 @@ export default function RecordsPage() {
       {/* Edit Modal */}
       {showEditModal && selectedRecord && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="card max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div ref={editModalRef} className="card max-w-lg w-full max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold">Edit Record</h3>
+              <h3 id="edit-modal-title" className="text-xl font-semibold">Edit Record</h3>
               <button
                 onClick={() => {
                   setShowEditModal(false);
@@ -888,8 +978,8 @@ export default function RecordsPage() {
       {/* Delete Modal */}
       {showDeleteModal && selectedRecord && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="card max-w-md w-full">
-            <h3 className="text-xl font-semibold text-danger-600 mb-4">Delete Record</h3>
+          <div ref={deleteModalRef} className="card max-w-md w-full" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+            <h3 id="delete-modal-title" className="text-xl font-semibold text-danger-600 mb-4">Delete Record</h3>
             <p className="text-slate-600 dark:text-slate-400 mb-4">
               Are you sure you want to delete this record? This action cannot be undone.
             </p>

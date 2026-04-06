@@ -1,4 +1,4 @@
-import { useRef, useState, KeyboardEvent, ClipboardEvent, ChangeEvent } from 'react';
+import { useRef, KeyboardEvent, ClipboardEvent, ChangeEvent } from 'react';
 import { cn } from '@/utils/cn';
 
 interface OtpInputProps {
@@ -10,7 +10,6 @@ interface OtpInputProps {
 }
 
 export function OtpInput({ length = 6, value, onChange, error, disabled }: OtpInputProps) {
-  const [focusedIndex, setFocusedIndex] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const digits = value.split('').slice(0, length);
@@ -94,7 +93,6 @@ export function OtpInput({ length = 6, value, onChange, error, disabled }: OtpIn
           onChange={(e) => handleChange(index, e)}
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={handlePaste}
-          onFocus={() => setFocusedIndex(index)}
           disabled={disabled}
           className={cn(
             'w-12 h-14 text-center text-2xl font-mono rounded-lg border-2 transition-all',

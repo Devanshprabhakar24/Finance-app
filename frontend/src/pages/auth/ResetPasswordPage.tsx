@@ -155,7 +155,7 @@ export default function ResetPasswordPage() {
                 disabled={resetPasswordMutation.isPending}
               />
               {/* Test Email Button (Development Only) */}
-              {process.env.NODE_ENV === 'development' && identifier.includes('@') && (
+              {import.meta.env.DEV && identifier.includes('@') && (
                 <div className="mt-2 flex gap-2">
                   <button
                     type="button"
@@ -207,7 +207,7 @@ export default function ResetPasswordPage() {
               />
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Check your email and phone for the OTP code
-                {process.env.NODE_ENV === 'development' && (
+                {import.meta.env.DEV && (
                   <span className="block text-blue-500 font-medium mt-1">
                     💡 Development Mode: You can use "123456" as test OTP
                   </span>

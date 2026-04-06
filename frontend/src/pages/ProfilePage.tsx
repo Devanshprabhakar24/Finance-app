@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuthStore } from '@/store/auth.store';
@@ -38,9 +38,19 @@ export default function ProfilePage() {
 
   // Profile form state
   const [profileForm, setProfileForm] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
+    name: '',
+    phone: '',
   });
+
+  // Fix: Sync profileForm with fetched user data
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        name: user.name || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [user]);
 
   // Password form state
   const [passwordForm, setPasswordForm] = useState({

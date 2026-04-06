@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getSummary, getCategoryBreakdown, getMonthlyTrends, getRecentTransactions } from '@/api/dashboard.api';
 import { queryKeys } from '@/api/queryClient';
-import { useState, Suspense, lazy } from 'react';
+import { useState } from 'react';
 import { usePermission } from '@/hooks/usePermission';
 import { 
   TrendingUp, 
@@ -30,8 +30,7 @@ interface FinancialRecord {
   };
 }
 
-// Lazy load chart components for better performance
-const LazyBarChart = lazy(() => import('@/components/charts/LazyBarChart'));
+
 
 export default function DashboardPage() {
   const { user } = useAuthStore();

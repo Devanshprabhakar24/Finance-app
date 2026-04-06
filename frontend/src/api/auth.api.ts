@@ -112,6 +112,17 @@ export async function logout(): Promise<void> {
 }
 
 /**
+ * Check email and phone availability
+ */
+export async function checkAvailability(email?: string, phone?: string): Promise<{ emailAvailable: boolean; phoneAvailable: boolean }> {
+  const response = await apiClient.post<{ success: boolean; data: { emailAvailable: boolean; phoneAvailable: boolean } }>('/auth/check-availability', {
+    email,
+    phone,
+  });
+  return response.data.data;
+}
+
+/**
  * Get current user profile
  */
 export async function getMe() {

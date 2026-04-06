@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { refreshToken } from '@/api/auth.api';
 
@@ -27,6 +27,14 @@ const decodeJWT = (token: string) => {
  */
 export const useTokenValidation = () => {
   const { accessToken, setAccessToken, logout, isHydrated } = useAuthStore();
+  
+  // Fix: Use ref to avoid memory leaks from interval recreation
+  const tokenRef = useRef(accessToken);
+  
+  // Keep ref updated with latest token
+  useEffect(() => {
+    tokenRef.current = accessToken;
+  }, [accessToken]);
 
   useEffect(() => {
     if (!isHydrated || !accessToken) return;
@@ -73,13 +81,16 @@ export const useTokenValidation = () => {
     validateToken();
   }, [accessToken, setAccessToken, logout, isHydrated]);
 
-  // Set up periodic token refresh (every 20 minutes)
+  // Set up periodic token refresh (every 20 minutes) - stable interval
   useEffect(() => {
-    if (!isHydrated || !accessToken) return;
+    if (!isHydrated) return;
 
     const interval = setInterval(async () => {
+      const token = tokenRef.current; // Always reads latest token
+      if (!token) return;
+
       try {
-        const decoded = decodeJWT(accessToken);
+        const decoded = decodeJWT(token);
         if (!decoded || !decoded.exp) return;
 
         const currentTime = Date.now() / 1000;
@@ -93,7 +104,7 @@ export const useTokenValidation = () => {
           } catch (error) {
             // Don't logout on refresh failure - let axios interceptor handle it
             // Only logout if token is actually expired/invalid
-            const currentDecoded = decodeJWT(accessToken);
+            const currentDecoded = decodeJWT(token);
             const now = Date.now() / 1000;
             if (!currentDecoded || currentDecoded.exp < now) {
               logout(); // Token is genuinely expired
@@ -108,5 +119,5 @@ export const useTokenValidation = () => {
     }, 20 * 60 * 1000); // Every 20 minutes
 
     return () => clearInterval(interval);
-  }, [accessToken, setAccessToken, isHydrated]);
+  }, [isHydrated, setAccessToken, logout]); // Stable dependencies - no accessToken
 };
