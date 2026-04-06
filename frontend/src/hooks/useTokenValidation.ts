@@ -51,8 +51,16 @@ export const useTokenValidation = () => {
             setAccessToken(response.data.accessToken);
             console.log('Token refreshed successfully');
           } catch (error) {
-            console.log('Token refresh failed, logging out');
-            logout();
+            // Don't logout on refresh failure - let axios interceptor handle it
+            // Only logout if token is actually expired/invalid
+            const currentDecoded = decodeJWT(accessToken);
+            const now = Date.now() / 1000;
+            if (!currentDecoded || currentDecoded.exp < now) {
+              console.log('Token genuinely expired, logging out');
+              logout();
+            } else {
+              console.log('Token refresh failed but token still valid, continuing');
+            }
           }
         }
       } catch (error) {
@@ -78,9 +86,20 @@ export const useTokenValidation = () => {
 
         // Refresh if token expires in less than 30 minutes
         if (decoded.exp - currentTime < 1800) {
-          const response = await refreshToken();
-          setAccessToken(response.data.accessToken);
-          console.log('Token refreshed automatically');
+          try {
+            const response = await refreshToken();
+            setAccessToken(response.data.accessToken);
+            console.log('Token refreshed automatically');
+          } catch (error) {
+            // Don't logout on refresh failure - let axios interceptor handle it
+            // Only logout if token is actually expired/invalid
+            const currentDecoded = decodeJWT(accessToken);
+            const now = Date.now() / 1000;
+            if (!currentDecoded || currentDecoded.exp < now) {
+              logout(); // Token is genuinely expired
+            }
+            // Otherwise silently fail — axios interceptor will handle 401s
+          }
         }
       } catch (error) {
         console.log('Automatic token refresh failed');

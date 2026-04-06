@@ -130,13 +130,10 @@ apiClient.interceptors.response.use(
         processQueue(refreshError as Error, null);
 
         // Only logout if refresh token is actually invalid
-        // Don't logout for network errors or temporary server issues
-        if (refreshError instanceof Error && 
-            (refreshError.message.includes('401') || 
-             refreshError.message.includes('403') ||
-             refreshError.message.includes('Invalid refresh token'))) {
-          
-          // Refresh failed - clear auth and redirect to login
+        // Check the actual HTTP status code, not error message
+        const status = (refreshError as AxiosError).response?.status;
+        if (status === 401 || status === 403) {
+          // Actual auth failure - clear auth and redirect to login
           clearAuth();
           
           // Only redirect if not already on login page
@@ -145,7 +142,8 @@ apiClient.interceptors.response.use(
             window.location.href = '/login';
           }
         } else {
-          // For network errors, just show a warning but don't logout
+          // For network errors or other issues, just show a warning but don't logout
+          console.log('Token refresh failed with status:', status);
           showToast('warning', 'Connection issue. Please try again.');
         }
 
