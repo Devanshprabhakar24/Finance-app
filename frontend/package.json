@@ -11,7 +11,10 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:strict": "eslint . --max-warnings 0"
+    "lint:strict": "eslint . --max-warnings 0",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:e2e": "cypress run --spec 'cypress/e2e/**/*.cy.ts'"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
@@ -40,6 +43,7 @@
     "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
+    "cypress": "^15.13.0",
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",

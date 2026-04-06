@@ -94,6 +94,7 @@ export function OtpInput({ length = 6, value, onChange, error, disabled }: OtpIn
           onKeyDown={(e) => handleKeyDown(index, e)}
           onPaste={handlePaste}
           disabled={disabled}
+          data-testid={`otp-input-${index}`}
           className={cn(
             'w-12 h-14 text-center text-2xl font-mono rounded-lg border-2 transition-all',
             'focus:outline-none focus:ring-2 focus:ring-offset-2',

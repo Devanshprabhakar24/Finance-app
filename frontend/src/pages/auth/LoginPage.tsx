@@ -91,6 +91,7 @@ export default function LoginPage() {
                   {...register('identifier')}
                   type="text"
                   placeholder="Enter email or phone"
+                  data-testid="login-identifier"
                   className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all"
                 />
               </div>
@@ -118,6 +119,7 @@ export default function LoginPage() {
                   {...register('password')}
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
+                  data-testid="login-password"
                   className="w-full pl-12 pr-12 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all"
                 />
                 <button
@@ -137,6 +139,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting || loginMutation.isPending}
+              data-testid="login-submit"
               className="w-full py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-sky-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting || loginMutation.isPending ? 'Signing in...' : 'Sign In'}

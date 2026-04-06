@@ -1,0 +1,18 @@
+{
+  "admin": {
+    "identifier": "admin@finance.com",
+    "password": "admin123"
+  },
+  "analyst": {
+    "identifier": "analyst@finance.dev",
+    "password": "Demo@12345"
+  },
+  "viewer": {
+    "identifier": "viewer@finance.dev",
+    "password": "Demo@12345"
+  },
+  "invalid": {
+    "identifier": "notexist@test.com",
+    "password": "wrongpassword"
+  }
+}

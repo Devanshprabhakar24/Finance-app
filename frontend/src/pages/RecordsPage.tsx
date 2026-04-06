@@ -446,6 +446,7 @@ export default function RecordsPage() {
               <button
                 type="button"
                 onClick={() => setShowCreateModal(true)}
+                data-testid="add-record-btn"
                 className="btn-primary flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
@@ -718,6 +719,7 @@ export default function RecordsPage() {
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as any, category: '' })}
+                  data-testid="record-type"
                   className="input-field"
                 >
                   <option value="INCOME">Income</option>
@@ -731,6 +733,7 @@ export default function RecordsPage() {
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  data-testid="record-title"
                   className="input-field"
                   placeholder="e.g., Monthly Salary"
                 />
@@ -742,6 +745,7 @@ export default function RecordsPage() {
                   type="number"
                   value={formData.amount === 0 ? '' : formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value === '' ? '' as unknown as number : parseFloat(e.target.value) })}
+                  data-testid="record-amount"
                   className="input-field"
                   placeholder="0.00"
                   min="0"
@@ -754,6 +758,7 @@ export default function RecordsPage() {
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  data-testid="record-category"
                   className="input-field"
                 >
                   <option value="">Select category</option>
@@ -769,6 +774,7 @@ export default function RecordsPage() {
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  data-testid="record-date"
                   className="input-field"
                   max={new Date().toISOString().split('T')[0]}
                 />
@@ -779,6 +785,7 @@ export default function RecordsPage() {
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  data-testid="record-notes"
                   className="input-field"
                   rows={3}
                   placeholder="Optional notes..."
@@ -793,6 +800,7 @@ export default function RecordsPage() {
                     setShowCreateModal(false);
                     resetForm();
                   }}
+                  data-testid="record-cancel-btn"
                   className="btn-secondary flex-1"
                 >
                   Cancel
@@ -801,6 +809,7 @@ export default function RecordsPage() {
                   type="button"
                   onClick={handleCreate}
                   disabled={createMutation.isPending}
+                  data-testid="record-submit-btn"
                   className="btn-primary flex-1"
                 >
                   {createMutation.isPending ? 'Creating...' : 'Create Record'}

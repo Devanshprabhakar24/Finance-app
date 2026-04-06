@@ -1,0 +1,16 @@
+{
+  "income": {
+    "type": "INCOME",
+    "title": "Cypress Test Salary",
+    "amount": "5000",
+    "category": "Salary",
+    "notes": "Created by Cypress E2E test"
+  },
+  "expense": {
+    "type": "EXPENSE",
+    "title": "Cypress Test Groceries",
+    "amount": "150",
+    "category": "Food & Dining",
+    "notes": "Expense created by Cypress E2E test"
+  }
+}
