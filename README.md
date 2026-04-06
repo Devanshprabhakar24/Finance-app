@@ -22,7 +22,7 @@ Go to https://finance-app-one-zeta.vercel.app and sign in with one of the demo a
 | ------- | --------------- | ------------- | --------------------------------------- |
 | Admin   | admin@fin.com   | Admin@123     | Full access — users, records, analytics |
 | Analyst | analyst@fin.dev | Analyst123@   | Records + analytics, no user management |
-| Viewer  | create by own   | create by own | Read-only dashboard                     |
+| Viewer  | Register to see   | Register to see | Read-only dashboard                     |
 
 ### OTP Step
 
@@ -168,7 +168,7 @@ npm run preview  # preview production build
 | `CLOUDINARY_API_SECRET` | yes      | Cloudinary API secret                              | `OexyFd...`                        |
 | `ALLOWED_ORIGINS`       | yes      | Comma-separated allowed CORS origins               | `https://yourapp.vercel.app`       |
 | `REDIS_URL`             | no       | Redis URL for rate limiting (falls back to memory) | `redis://...`                      |
-| `ADMIN_EMAIL`           | no       | Admin account email (for initial setup)            | `admin@example.com`                |
+| `ADMIN_EMAIL`           | no       | Admin account email (for initial setup)            | `admin@fin.com`                |
 | `ADMIN_PASSWORD`        | no       | Admin account password                             | `Admin@123`                        |
 | `ADMIN_PHONE`           | no       | Admin phone in E.164 format                        | `+919999999999`                    |
 | `ADMIN_FULL_NAME`       | no       | Admin display name                                 | `System Administrator`             |
