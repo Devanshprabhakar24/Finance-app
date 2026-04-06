@@ -81,9 +81,23 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized - Token expired
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Don't retry auth endpoints or CSRF errors to avoid infinite loops
+      // Don't retry auth endpoints to avoid infinite loops
       const errorMessage = (error.response?.data as any)?.message || '';
-      if (originalRequest.url?.includes('/auth/') || errorMessage.toLowerCase().includes('csrf')) {
+      if (originalRequest.url?.includes('/auth/')) {
+        return Promise.reject(error);
+      }
+
+      // If it's a CSRF error, re-fetch the token and retry once
+      if (errorMessage.toLowerCase().includes('csrf')) {
+        if (!originalRequest._retry) {
+          originalRequest._retry = true;
+          await initCsrfToken();
+          const newToken = getCsrfToken();
+          if (newToken && originalRequest.headers) {
+            originalRequest.headers['X-CSRF-Token'] = newToken;
+          }
+          return apiClient(originalRequest);
+        }
         return Promise.reject(error);
       }
 

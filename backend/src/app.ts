@@ -160,9 +160,20 @@ export const createApp = (): Application => {
     });
   });
 
-  // CSRF token endpoint for frontend
+  // CSRF token endpoint — always issues a fresh token and sets the cookie.
+  // The frontend calls this on startup, stores the token in memory, and sends
+  // it back as X-CSRF-Token on every mutating request.
   app.get('/api/csrf-token', (req: any, res) => {
-    res.json({ csrfToken: req.csrfToken });
+    // Force a fresh token on every call so the frontend is never stale
+    const token = require('crypto').randomBytes(32).toString('hex');
+    res.cookie('csrfToken', token, {
+      httpOnly: false,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+    req.csrfToken = token; // keep in sync for any downstream middleware
+    res.json({ csrfToken: token });
   });
 
   // Section 4.4: Prometheus metrics endpoint
