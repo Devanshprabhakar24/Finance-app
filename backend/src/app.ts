@@ -65,6 +65,10 @@ export const createApp = (): Application => {
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);  // Allow server-to-server
       if (env.allowedOrigins.includes(origin)) return callback(null, true);
+      // Allow Vercel preview deployment URLs for this project
+      if (/^https:\/\/finance-[a-z0-9-]+-devansh-prabhakars-projects\.vercel\.app$/.test(origin)) {
+        return callback(null, true);
+      }
       callback(new Error(`CORS: origin ${origin} not allowed`));
     },
     credentials: true,

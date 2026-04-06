@@ -38,14 +38,20 @@ export const verifyCsrfToken = (req: Request, _res: Response, next: NextFunction
     return next();
   }
 
-  // In production with cross-origin requests, be more flexible with CSRF
+  // In production, validate origin against allowed list before checking CSRF token
   if (process.env.NODE_ENV === 'production') {
-    // Check if request is from allowed origin
     const origin = req.headers.origin;
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
-    
-    if (origin && allowedOrigins.includes(origin)) {
-      // For trusted origins, allow requests without CSRF token for auth endpoints
+    const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim());
+
+    // Check exact match or wildcard *.vercel.app subdomains for preview deployments
+    const isAllowedOrigin = origin && (
+      allowedOrigins.includes(origin) ||
+      /^https:\/\/[a-z0-9-]+-[a-z0-9]+-[a-z0-9-]+-projects\.vercel\.app$/.test(origin) ||
+      allowedOrigins.some(o => o.startsWith('*.') && origin.endsWith(o.slice(1)))
+    );
+
+    if (isAllowedOrigin) {
+      // For trusted origins, skip CSRF for auth endpoints
       if (req.path.startsWith('/api/auth/')) {
         return next();
       }
