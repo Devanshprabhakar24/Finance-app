@@ -10,21 +10,12 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiBaseUrl = env.VITE_API_BASE_URL || 'http://localhost:8000/api'
   
-  return {
-  base: '/',
-  plugins: [
+  const plugins = [
     react({
       // Babel-based fast refresh — better HMR for hooks
       babel: {
         plugins: [],
       },
-    }),
-    // Only run in analysis mode: `ANALYZE=true npm run build`
-    process.env.ANALYZE && visualizer({
-      open: true,
-      gzipSize: true,
-      brotliSize: true,
-      filename: 'dist/bundle-report.html',
     }),
     // Brotli (modern browsers, ~20% smaller than gzip)
     compression({ algorithm: 'brotliCompress', ext: '.br', threshold: 1024 }),
@@ -37,13 +28,13 @@ export default defineConfig(({ mode }) => {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: new RegExp(`^${apiBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+            urlPattern: /^https:\/\/finance-app-ddaf\.onrender\.com\//,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+                maxAgeSeconds: 86400, // 24 hours
               },
             },
           },
@@ -65,92 +56,107 @@ export default defineConfig(({ mode }) => {
         ],
       },
     }),
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
+  ];
+
+  // Only run in analysis mode: `ANALYZE=true npm run build`
+  if (process.env.ANALYZE) {
+    plugins.push(visualizer({
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
+      filename: 'dist/bundle-report.html',
+    }));
+  }
+  
+  return {
+    base: '/',
+    plugins,
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-    hmr: {
-      overlay: true,
-    },
-    headers: {
-      'Cache-Control': 'no-store',
-    },
-  },
-  optimizeDeps: {
-    include: [
-      'react', 'react-dom', 'react-router-dom',
-      'axios', '@tanstack/react-query', 'zustand',
-      'react-hook-form', '@hookform/resolvers/zod', 'zod',
-      'lucide-react', 'clsx', 'tailwind-merge', 'react-hot-toast',
-      'date-fns',
-    ],
-    exclude: ['recharts', 'framer-motion'],
-  },
-  build: {
-    target: 'es2022',
-    minify: 'esbuild',
-    cssMinify: true,
-    cssCodeSplit: true,
-    assetsInlineLimit: 4096,
-    sourcemap: false,
-    reportCompressedSize: false,
-    chunkSizeWarningLimit: 400,
-    rollupOptions: {
-      output: {
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]',
-
-        manualChunks(id) {
-          if (id.includes('node_modules/react/') ||
-              id.includes('node_modules/react-dom/') ||
-              id.includes('node_modules/scheduler/')) {
-            return 'vendor-react';
-          }
-
-          if (id.includes('node_modules/react-router-dom') ||
-              id.includes('node_modules/react-router/') ||
-              id.includes('node_modules/@remix-run/')) {
-            return 'vendor-router';
-          }
-
-          if (id.includes('node_modules/@tanstack/react-query') ||
-              id.includes('node_modules/zustand') ||
-              id.includes('node_modules/axios')) {
-            return 'vendor-data';
-          }
-
-          if (id.includes('node_modules/recharts') ||
-              id.includes('node_modules/d3-') ||
-              id.includes('node_modules/victory-')) {
-            return 'vendor-charts';
-          }
-
-          if (id.includes('node_modules/framer-motion')) {
-            return 'vendor-motion';
-          }
-
-          if (id.includes('node_modules/react-hook-form') ||
-              id.includes('node_modules/@hookform/') ||
-              id.includes('node_modules/zod')) {
-            return 'vendor-forms';
-          }
-
-          if (id.includes('node_modules/date-fns')) {
-            return 'vendor-date';
-          }
+    server: {
+      port: 3000,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8000',
+          changeOrigin: true,
         },
       },
+      hmr: {
+        overlay: true,
+      },
+      headers: {
+        'Cache-Control': 'no-store',
+      },
     },
+    optimizeDeps: {
+      include: [
+        'react', 'react-dom', 'react-router-dom',
+        'axios', '@tanstack/react-query', 'zustand',
+        'react-hook-form', '@hookform/resolvers/zod', 'zod',
+        'lucide-react', 'clsx', 'tailwind-merge', 'react-hot-toast',
+        'date-fns',
+      ],
+      exclude: ['recharts', 'framer-motion'],
+    },
+    build: {
+      target: 'es2022',
+      minify: 'esbuild',
+      cssMinify: true,
+      cssCodeSplit: true,
+      assetsInlineLimit: 4096,
+      sourcemap: false,
+      reportCompressedSize: false,
+      chunkSizeWarningLimit: 400,
+      rollupOptions: {
+        output: {
+          entryFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]',
+
+          manualChunks(id) {
+            if (id.includes('node_modules/react/') ||
+                id.includes('node_modules/react-dom/') ||
+                id.includes('node_modules/scheduler/')) {
+              return 'vendor-react';
+            }
+
+            if (id.includes('node_modules/react-router-dom') ||
+                id.includes('node_modules/react-router/') ||
+                id.includes('node_modules/@remix-run/')) {
+              return 'vendor-router';
+            }
+
+            if (id.includes('node_modules/@tanstack/react-query') ||
+                id.includes('node_modules/zustand') ||
+                id.includes('node_modules/axios')) {
+              return 'vendor-data';
+            }
+
+            if (id.includes('node_modules/recharts') ||
+                id.includes('node_modules/d3-') ||
+                id.includes('node_modules/victory-')) {
+              return 'vendor-charts';
+            }
+
+            if (id.includes('node_modules/framer-motion')) {
+              return 'vendor-motion';
+            }
+
+            if (id.includes('node_modules/react-hook-form') ||
+                id.includes('node_modules/@hookform/') ||
+                id.includes('node_modules/zod')) {
+              return 'vendor-forms';
+            }
+
+            if (id.includes('node_modules/date-fns')) {
+              return 'vendor-date';
+            }
+          },
+        },
+      },
+    }
   }
 })
