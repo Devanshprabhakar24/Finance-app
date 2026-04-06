@@ -134,7 +134,7 @@ export const createApp = (): Application => {
   // Rate limiting
   app.use(globalLimiter);
 
-  // CSRF protection
+  // CSRF protection (disabled — app uses JWT Bearer auth, see csrf.ts)
   app.use(generateCsrfToken);
   app.use(verifyCsrfToken);
 

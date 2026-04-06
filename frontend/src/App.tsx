@@ -1,7 +1,7 @@
 import { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { setTokenHelpers, initCsrfToken } from '@/api/axios';
+import { setTokenHelpers } from '@/api/axios';
 import { useAuthStore, selectHasHydrated } from '@/store/auth.store';
 import { initializeTheme } from '@/store/ui.store';
 import { useTokenValidation } from '@/hooks/useTokenValidation';
@@ -68,9 +68,6 @@ function App() {
         }
       },
     });
-
-    // ✅ Fetch CSRF token from backend and store in memory (cross-origin safe)
-    initCsrfToken();
   }, []);
 
   // Show loading spinner until store is hydrated
