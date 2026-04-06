@@ -59,16 +59,11 @@ export const useTokenValidation = () => {
             setAccessToken(response.data.accessToken);
             console.log('Token refreshed successfully');
           } catch (error) {
-            // Don't logout on refresh failure - let axios interceptor handle it
-            // Only logout if token is actually expired/invalid
-            const currentDecoded = decodeJWT(accessToken);
-            const now = Date.now() / 1000;
-            if (!currentDecoded || currentDecoded.exp < now) {
-              console.log('Token genuinely expired, logging out');
-              logout();
-            } else {
-              console.log('Token refresh failed but token still valid, continuing');
-            }
+            // Only logout if token is actually expired
+            const decoded = decodeJWT(accessToken);
+            const isExpired = !decoded || decoded.exp < Date.now() / 1000;
+            if (isExpired) logout();
+            // Otherwise do nothing — axios will handle 401s naturally
           }
         }
       } catch (error) {
@@ -102,14 +97,11 @@ export const useTokenValidation = () => {
             setAccessToken(response.data.accessToken);
             console.log('Token refreshed automatically');
           } catch (error) {
-            // Don't logout on refresh failure - let axios interceptor handle it
-            // Only logout if token is actually expired/invalid
-            const currentDecoded = decodeJWT(token);
-            const now = Date.now() / 1000;
-            if (!currentDecoded || currentDecoded.exp < now) {
-              logout(); // Token is genuinely expired
-            }
-            // Otherwise silently fail — axios interceptor will handle 401s
+            // Only logout if token is actually expired
+            const decoded = decodeJWT(token);
+            const isExpired = !decoded || decoded.exp < Date.now() / 1000;
+            if (isExpired) logout();
+            // Otherwise do nothing — axios will handle 401s naturally
           }
         }
       } catch (error) {
