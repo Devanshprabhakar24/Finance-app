@@ -38,6 +38,12 @@ export const queryClient = new QueryClient({
   },
 });
 
+// 🔒 SECURITY: Make queryClient globally accessible for logout function
+// This allows synchronous cache clearing to prevent data leakage
+if (typeof window !== 'undefined') {
+  (window as any).__REACT_QUERY_CLIENT__ = queryClient;
+}
+
 /**
  * Query Keys Factory
  * Centralized query key management for better cache control

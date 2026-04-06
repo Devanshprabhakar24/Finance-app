@@ -60,13 +60,38 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
         }),
 
-      // Logout - clear all auth data
-      logout: () =>
+      // Logout - clear all auth data AND React Query cache
+      logout: () => {
+        // 🔒 SECURITY: Clear React Query cache FIRST before clearing state
+        // This prevents race conditions where queries might refetch with old token
+        if (typeof window !== 'undefined') {
+          try {
+            // Try to get queryClient from window if already loaded
+            const queryClient = (window as any).__REACT_QUERY_CLIENT__;
+            if (queryClient) {
+              queryClient.clear();
+            }
+          } catch (error) {
+            console.warn('Failed to clear query cache on logout:', error);
+          }
+        }
+        
+        // Clear auth state
         set({
           user: null,
           accessToken: null,
           isAuthenticated: false,
-        }),
+        });
+        
+        // Also clear localStorage manually to ensure clean state
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem(STORAGE_KEYS.AUTH);
+          } catch (error) {
+            console.warn('Failed to clear localStorage:', error);
+          }
+        }
+      },
 
       // Update user data (e.g., after profile update)
       updateUser: (updates) => {

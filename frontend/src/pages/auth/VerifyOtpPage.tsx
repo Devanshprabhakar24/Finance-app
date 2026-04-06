@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { verifyOtp, resendOtp } from '@/api/auth.api';
 import { OtpInput } from '@/components/auth/OtpInput';
 import { useAuthStore } from '@/store/auth.store';
+import { queryClient } from '@/api/queryClient';
 import { ArrowLeft, Shield, Mail, MessageSquare, Loader2 } from 'lucide-react';
 import { OTP_CONFIG } from '@/utils/constants';
 import toast from 'react-hot-toast';
@@ -40,8 +41,15 @@ export default function VerifyOtpPage() {
       verifyOtp(payload),
     onSuccess: (data) => {
       const { user, accessToken, refreshToken } = data.data;
+      
+      // 🔒 SECURITY: Clear all cached queries before setting new user
+      // This prevents new user from seeing previous user's cached data
+      queryClient.clear();
+      
+      // Set new user and tokens
       setUser(user);
       setTokens(accessToken, refreshToken);
+      
       toast.success('Login successful!');
       navigate('/dashboard');
     },

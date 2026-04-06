@@ -64,6 +64,10 @@ export const resolveTargetUser = (req: Request, _res: Response, next: NextFuncti
     throw new UnauthorizedError('Authentication required');
   }
 
+  console.log('🔐 resolveTargetUser - User:', req.user.id, req.user.email, req.user.role);
+  console.log('🔐 resolveTargetUser - Query userId:', req.query?.userId);
+  console.log('🔐 resolveTargetUser - Body userId:', req.body?.userId);
+
   // Admin can target any user
   if (req.user.role === UserRole.ADMIN) {
     // For POST/PUT - check body.userId
@@ -87,6 +91,8 @@ export const resolveTargetUser = (req: Request, _res: Response, next: NextFuncti
   else {
     req.targetUserId = req.user.id;
   }
+
+  console.log('🔐 resolveTargetUser - Final targetUserId:', req.targetUserId);
 
   next();
 };

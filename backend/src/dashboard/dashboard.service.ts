@@ -58,6 +58,9 @@ const buildBaseMatch = (range?: DateRangeFilter, targetUserId?: string) => {
     if (range.to) dateFilter.$lte = range.to;
     match.date = dateFilter;
   }
+  
+  console.log('🔍 Dashboard Service - buildBaseMatch:', { match, targetUserId, hasRange: !!(range?.from || range?.to) });
+  
   return match;
 };
 

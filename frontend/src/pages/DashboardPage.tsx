@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { getSummary, getCategoryBreakdown, getMonthlyTrends, getRecentTransactions } from '@/api/dashboard.api';
-import { queryKeys } from '@/api/queryClient';
-import { useState } from 'react';
+import { queryClient, queryKeys } from '@/api/queryClient';
+import { useState, useEffect, useRef } from 'react';
 import { usePermission } from '@/hooks/usePermission';
 import { 
   TrendingUp, 
@@ -36,6 +36,20 @@ export default function DashboardPage() {
   const { user } = useAuthStore();
   const { can } = usePermission();
   const canViewAnalytics = can('view:analytics');
+  
+  // 🔒 SECURITY: Track user ID to detect user changes and clear cache
+  const previousUserIdRef = useRef<string | null>(null);
+  
+  useEffect(() => {
+    console.log('🔍 Dashboard - Current user:', user?._id, user?.email, user?.role);
+    
+    if (user?._id && previousUserIdRef.current && previousUserIdRef.current !== user._id) {
+      // User changed - clear all cached data
+      console.log('⚠️ User changed! Clearing cache. Old:', previousUserIdRef.current, 'New:', user._id);
+      queryClient.clear();
+    }
+    previousUserIdRef.current = user?._id || null;
+  }, [user?._id]);
 
   // Date range state
   const [fromDate, setFromDate] = useState<string>('');

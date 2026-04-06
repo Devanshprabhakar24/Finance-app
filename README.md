@@ -2,6 +2,8 @@
 
 A full-stack finance management platform with OTP-based authentication, role-based access control, analytics, and file uploads.
 
+> 🔒 **Security Note**: This application implements comprehensive multi-tenant data isolation. See [SECURITY-OVERVIEW.md](./SECURITY-OVERVIEW.md) for details.
+
 ## Live App
 
 | Service      | URL                                              |
@@ -126,6 +128,27 @@ npm run dev      # Vite dev server
 npm run build    # production build
 npm run preview  # preview production build
 ```
+
+---
+
+## Security Documentation
+
+This application implements multiple layers of security to ensure data isolation and prevent unauthorized access:
+
+- **[Backend Security Fix](./SECURITY-FIX-DATA-ISOLATION.md)** - Database-level data isolation and RBAC implementation
+- **[Frontend Security Fix](./FRONTEND-SECURITY-FIX.md)** - React Query cache management and session handling
+- **[Production Migration Guide](./PRODUCTION-MIGRATION.md)** - Safe deployment and data migration procedures
+- **[Database Fix Tool](./FIX-DATABASE.html)** - Browser-based tool for database maintenance
+
+### Key Security Features
+
+✅ Multi-tenant data isolation (users can only access their own data)  
+✅ Role-based access control (Admin / Analyst / User)  
+✅ JWT Bearer token authentication with automatic refresh  
+✅ React Query cache clearing on logout/login to prevent data leakage  
+✅ Backend ownership validation on all CRUD operations  
+✅ Rate limiting and request correlation IDs  
+✅ CSRF protection via JWT Bearer tokens
 
 ---
 
