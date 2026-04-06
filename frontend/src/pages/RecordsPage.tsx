@@ -690,6 +690,7 @@ export default function RecordsPage() {
             <div className="flex items-center justify-between mb-6">
               <h3 id="create-modal-title" className="text-xl font-semibold">Create Record</h3>
               <button
+                type="button"
                 onClick={() => {
                   setShowCreateModal(false);
                   resetForm();
@@ -776,6 +777,7 @@ export default function RecordsPage() {
 
               <div className="flex gap-3 pt-4">
                 <button
+                  type="button"
                   onClick={() => {
                     setShowCreateModal(false);
                     resetForm();
@@ -785,6 +787,7 @@ export default function RecordsPage() {
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleCreate}
                   disabled={createMutation.isPending}
                   className="btn-primary flex-1"
@@ -804,6 +807,7 @@ export default function RecordsPage() {
             <div className="flex items-center justify-between mb-6">
               <h3 id="edit-modal-title" className="text-xl font-semibold">Edit Record</h3>
               <button
+                type="button"
                 onClick={() => {
                   setShowEditModal(false);
                   setSelectedRecord(null);
@@ -953,6 +957,7 @@ export default function RecordsPage() {
 
               <div className="flex gap-3 pt-4">
                 <button
+                  type="button"
                   onClick={() => {
                     setShowEditModal(false);
                     setSelectedRecord(null);
@@ -963,6 +968,7 @@ export default function RecordsPage() {
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleUpdate}
                   disabled={updateMutation.isPending}
                   className="btn-primary flex-1"
@@ -991,6 +997,7 @@ export default function RecordsPage() {
             </div>
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => {
                   setShowDeleteModal(false);
                   setSelectedRecord(null);
@@ -1000,6 +1007,7 @@ export default function RecordsPage() {
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleConfirmDelete}
                 disabled={deleteMutation.isPending}
                 className="btn-danger flex-1"
