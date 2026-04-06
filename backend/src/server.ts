@@ -9,24 +9,42 @@ import cloudinary from 'cloudinary';
 /**
  * Startup health verification (Section 7.3)
  * Verifies all critical services are reachable before binding the port
+ * Made more resilient to handle service failures gracefully
  */
 const verifyStartup = async () => {
-  // 1. MongoDB ping
-  if (mongoose.connection.db) {
-    await mongoose.connection.db.admin().ping();
-    logger.info('✅ MongoDB: healthy');
+  const healthChecks = [];
+
+  // 1. MongoDB ping (critical - must work)
+  try {
+    if (mongoose.connection.db) {
+      await mongoose.connection.db.admin().ping();
+      logger.info('✅ MongoDB: healthy');
+    }
+  } catch (error) {
+    logger.error('❌ MongoDB: unhealthy', error);
+    throw new Error('MongoDB connection failed - cannot start server');
   }
 
-  // 2. Redis ping (if configured)
-  const redis = getRedisClient();
-  if (redis) {
-    await redis.ping();
-    logger.info('✅ Redis: healthy');
+  // 2. Redis ping (optional - graceful degradation)
+  try {
+    const redis = getRedisClient();
+    if (redis) {
+      await redis.ping();
+      logger.info('✅ Redis: healthy');
+    } else {
+      logger.info('ℹ️ Redis: not configured (graceful degradation)');
+    }
+  } catch (error) {
+    logger.warn('⚠️ Redis: unhealthy, continuing without Redis', error);
   }
 
-  // 3. Verify Cloudinary config is valid
-  await cloudinary.v2.api.ping();
-  logger.info('✅ Cloudinary: healthy');
+  // 3. Verify Cloudinary config is valid (optional - graceful degradation)
+  try {
+    await cloudinary.v2.api.ping();
+    logger.info('✅ Cloudinary: healthy');
+  } catch (error) {
+    logger.warn('⚠️ Cloudinary: unhealthy, file uploads may fail', error);
+  }
 };
 
 /**
@@ -34,18 +52,28 @@ const verifyStartup = async () => {
  */
 const startServer = async () => {
   try {
+    logger.info('🚀 Starting Finance Dashboard Backend...');
+    
     // Connect to database
+    logger.info('📡 Connecting to MongoDB...');
     await connectDB();
+    logger.info('✅ MongoDB connected successfully');
 
     // Verify all services are healthy
+    logger.info('🔍 Verifying service health...');
     await verifyStartup();
+    logger.info('✅ Service health verification complete');
 
     // Create Express app
+    logger.info('⚙️ Creating Express application...');
     const app = createApp();
+    logger.info('✅ Express app created successfully');
 
     // Start listening
+    logger.info(`🌐 Starting server on port ${env.port}...`);
     const server = app.listen(env.port, () => {
       logger.info(`🚀 Server running on port ${env.port} in ${env.nodeEnv} mode`);
+      logger.info(`🏥 Health check: http://localhost:${env.port}/api/health`);
       if (env.nodeEnv !== 'production') {
         logger.info(`📚 API Documentation: http://localhost:${env.port}/api/docs`);
       }
@@ -86,7 +114,24 @@ const startServer = async () => {
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
   } catch (error) {
-    logger.error('Failed to start server:', error);
+    logger.error('❌ Failed to start server:', error);
+    
+    // Log more details about the error
+    if (error instanceof Error) {
+      logger.error('Error name:', error.name);
+      logger.error('Error message:', error.message);
+      logger.error('Error stack:', error.stack);
+    }
+    
+    // Log environment info for debugging
+    logger.error('Environment info:', {
+      nodeEnv: env.nodeEnv,
+      port: env.port,
+      mongodbUri: env.mongodbUri ? 'SET' : 'NOT SET',
+      jwtAccessSecret: env.jwt.accessSecret ? 'SET' : 'NOT SET',
+      cloudinaryCloudName: env.cloudinary.cloudName ? 'SET' : 'NOT SET',
+    });
+    
     process.exit(1);
   }
 };

@@ -13,7 +13,7 @@
     "seed": "npm run seed --prefix backend",
     "start:backend": "npm start --prefix backend",
     "start:frontend": "npm run preview --prefix frontend",
-    "postinstall": "npm install --prefix frontend"
+    "postinstall": "cd frontend && npm install"
   },
   "keywords": ["finance", "dashboard", "fullstack"],
   "author": "",

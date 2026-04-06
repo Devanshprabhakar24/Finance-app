@@ -13,37 +13,67 @@ const cloudinary_1 = __importDefault(require("cloudinary"));
 /**
  * Startup health verification (Section 7.3)
  * Verifies all critical services are reachable before binding the port
+ * Made more resilient to handle service failures gracefully
  */
 const verifyStartup = async () => {
-    // 1. MongoDB ping
-    if (mongoose_1.default.connection.db) {
-        await mongoose_1.default.connection.db.admin().ping();
-        logger_1.logger.info('✅ MongoDB: healthy');
+    const healthChecks = [];
+    // 1. MongoDB ping (critical - must work)
+    try {
+        if (mongoose_1.default.connection.db) {
+            await mongoose_1.default.connection.db.admin().ping();
+            logger_1.logger.info('✅ MongoDB: healthy');
+        }
     }
-    // 2. Redis ping (if configured)
-    const redis = (0, redis_1.getRedisClient)();
-    if (redis) {
-        await redis.ping();
-        logger_1.logger.info('✅ Redis: healthy');
+    catch (error) {
+        logger_1.logger.error('❌ MongoDB: unhealthy', error);
+        throw new Error('MongoDB connection failed - cannot start server');
     }
-    // 3. Verify Cloudinary config is valid
-    await cloudinary_1.default.v2.api.ping();
-    logger_1.logger.info('✅ Cloudinary: healthy');
+    // 2. Redis ping (optional - graceful degradation)
+    try {
+        const redis = (0, redis_1.getRedisClient)();
+        if (redis) {
+            await redis.ping();
+            logger_1.logger.info('✅ Redis: healthy');
+        }
+        else {
+            logger_1.logger.info('ℹ️ Redis: not configured (graceful degradation)');
+        }
+    }
+    catch (error) {
+        logger_1.logger.warn('⚠️ Redis: unhealthy, continuing without Redis', error);
+    }
+    // 3. Verify Cloudinary config is valid (optional - graceful degradation)
+    try {
+        await cloudinary_1.default.v2.api.ping();
+        logger_1.logger.info('✅ Cloudinary: healthy');
+    }
+    catch (error) {
+        logger_1.logger.warn('⚠️ Cloudinary: unhealthy, file uploads may fail', error);
+    }
 };
 /**
  * Start the server with production optimizations
  */
 const startServer = async () => {
     try {
+        logger_1.logger.info('🚀 Starting Finance Dashboard Backend...');
         // Connect to database
+        logger_1.logger.info('📡 Connecting to MongoDB...');
         await (0, db_1.connectDB)();
+        logger_1.logger.info('✅ MongoDB connected successfully');
         // Verify all services are healthy
+        logger_1.logger.info('🔍 Verifying service health...');
         await verifyStartup();
+        logger_1.logger.info('✅ Service health verification complete');
         // Create Express app
+        logger_1.logger.info('⚙️ Creating Express application...');
         const app = (0, app_1.createApp)();
+        logger_1.logger.info('✅ Express app created successfully');
         // Start listening
+        logger_1.logger.info(`🌐 Starting server on port ${env_1.env.port}...`);
         const server = app.listen(env_1.env.port, () => {
             logger_1.logger.info(`🚀 Server running on port ${env_1.env.port} in ${env_1.env.nodeEnv} mode`);
+            logger_1.logger.info(`🏥 Health check: http://localhost:${env_1.env.port}/api/health`);
             if (env_1.env.nodeEnv !== 'production') {
                 logger_1.logger.info(`📚 API Documentation: http://localhost:${env_1.env.port}/api/docs`);
             }
@@ -79,7 +109,21 @@ const startServer = async () => {
         process.on('SIGINT', () => gracefulShutdown('SIGINT'));
     }
     catch (error) {
-        logger_1.logger.error('Failed to start server:', error);
+        logger_1.logger.error('❌ Failed to start server:', error);
+        // Log more details about the error
+        if (error instanceof Error) {
+            logger_1.logger.error('Error name:', error.name);
+            logger_1.logger.error('Error message:', error.message);
+            logger_1.logger.error('Error stack:', error.stack);
+        }
+        // Log environment info for debugging
+        logger_1.logger.error('Environment info:', {
+            nodeEnv: env_1.env.nodeEnv,
+            port: env_1.env.port,
+            mongodbUri: env_1.env.mongodbUri ? 'SET' : 'NOT SET',
+            jwtAccessSecret: env_1.env.jwt.accessSecret ? 'SET' : 'NOT SET',
+            cloudinaryCloudName: env_1.env.cloudinary.cloudName ? 'SET' : 'NOT SET',
+        });
         process.exit(1);
     }
 };

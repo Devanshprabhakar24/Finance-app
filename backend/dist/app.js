@@ -140,6 +140,10 @@ const createApp = () => {
             mongo: mongoose_1.default.connection.readyState === 1 ? 'connected' : 'disconnected',
         });
     });
+    // CSRF token endpoint for frontend
+    app.get('/api/csrf-token', (req, res) => {
+        res.json({ csrfToken: req.csrfToken });
+    });
     // Section 4.4: Prometheus metrics endpoint
     app.get('/metrics', async (_req, res) => {
         res.set('Content-Type', metrics_1.registry.contentType);

@@ -13,7 +13,7 @@ export const generateCsrfToken = (req: Request, res: Response, next: NextFunctio
     res.cookie('csrfToken', token, {
       httpOnly: false, // Must be readable by JavaScript
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Allow cross-origin in production
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
     req.csrfToken = token;
@@ -36,6 +36,20 @@ export const verifyCsrfToken = (req: Request, _res: Response, next: NextFunction
   // Skip for refresh token endpoint (uses httpOnly cookie only)
   if (req.path === '/api/auth/refresh-token') {
     return next();
+  }
+
+  // In production with cross-origin requests, be more flexible with CSRF
+  if (process.env.NODE_ENV === 'production') {
+    // Check if request is from allowed origin
+    const origin = req.headers.origin;
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+    
+    if (origin && allowedOrigins.includes(origin)) {
+      // For trusted origins, allow requests without CSRF token for auth endpoints
+      if (req.path.startsWith('/api/auth/')) {
+        return next();
+      }
+    }
   }
 
   const tokenFromCookie = req.cookies.csrfToken;

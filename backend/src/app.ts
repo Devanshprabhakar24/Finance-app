@@ -156,6 +156,11 @@ export const createApp = (): Application => {
     });
   });
 
+  // CSRF token endpoint for frontend
+  app.get('/api/csrf-token', (req: any, res) => {
+    res.json({ csrfToken: req.csrfToken });
+  });
+
   // Section 4.4: Prometheus metrics endpoint
   app.get('/metrics', async (_req, res) => {
     res.set('Content-Type', registry.contentType);
