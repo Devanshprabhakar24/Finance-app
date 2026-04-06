@@ -72,4 +72,4 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://finance-103y771kv-devansh-prabhakars-projects.vercel.app,http://localhost:3000,http://localhost:5173
+        value: https://finance-app-one-zeta.vercel.app,https://finance-103y771kv-devansh-prabhakars-projects.vercel.app,http://localhost:3000,http://localhost:5173
