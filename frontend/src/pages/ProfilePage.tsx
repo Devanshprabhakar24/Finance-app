@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuthStore } from '@/store/auth.store';
 import { User, Mail, Phone, Shield, Calendar, Edit2, Save, X, Lock, Upload, Loader2, KeyRound } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient from '@/api/axios';
-import { formatDate } from '@/utils/format';
+import { formatDate } from '@/utils/formatDate';
 import { requestPasswordChangeOtp, changePasswordWithOtp } from '@/api/users.api';
+import { changePasswordSchema } from '@/schemas/user.schema';
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user: authUser, setUser } = useAuthStore();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -138,6 +141,7 @@ export default function ProfilePage() {
       formData.append('avatar', file);
       const response = await apiClient.post('/users/me/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 30000,
       });
       return response.data;
     },
@@ -168,20 +172,11 @@ export default function ProfilePage() {
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!passwordForm.currentPassword) {
-      toast.error('Current password is required');
-      return;
-    }
-    if (!passwordForm.newPassword) {
-      toast.error('New password is required');
-      return;
-    }
-    if (passwordForm.newPassword.length < 8) {
-      toast.error('New password must be at least 8 characters');
-      return;
-    }
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('Passwords do not match');
+    
+    // Use shared password validation schema
+    const result = changePasswordSchema.safeParse(passwordForm);
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
       return;
     }
 
@@ -257,7 +252,7 @@ export default function ProfilePage() {
               Unable to load profile data. Please try logging in again.
             </p>
             <button
-              onClick={() => window.location.href = '/login'}
+              onClick={() => navigate('/login')}
               className="mt-4 btn-primary"
             >
               Go to Login

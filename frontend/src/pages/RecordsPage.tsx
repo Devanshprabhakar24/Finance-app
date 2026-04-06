@@ -4,7 +4,9 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { getRecords, createRecord, updateRecord, deleteRecord } from '@/api/records.api';
 import { queryKeys } from '@/api/queryClient';
 import { useAuthStore } from '@/store/auth.store';
+import { usePermission } from '@/hooks/usePermission';
 import { useDebounce } from '@/hooks/useDebounce';
+import { CATEGORIES } from '@/utils/constants';
 import {
   Plus,
   Search,
@@ -23,7 +25,8 @@ import {
   Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { formatCurrency, formatDate } from '@/utils/format';
+import { formatCurrency } from '@/utils/format';
+import { formatDate } from '@/utils/formatDate';
 import type { CreateRecordPayload } from '@/api/records.api';
 
 import apiClient from '@/api/axios';
@@ -54,7 +57,7 @@ interface FinancialRecord {
 export default function RecordsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const isAdmin = user?.role === 'ADMIN';
+  const { can } = usePermission();
 
   // State
   const [search, setSearch] = useState('');
@@ -157,7 +160,7 @@ export default function RecordsPage() {
   // Form state
   const [formData, setFormData] = useState<CreateRecordPayload>({
     title: '',
-    amount: 0,
+    amount: '' as unknown as number,
     type: 'EXPENSE',
     category: '',
     date: new Date().toISOString().split('T')[0],
@@ -283,7 +286,7 @@ export default function RecordsPage() {
   const resetForm = () => {
     setFormData({
       title: '',
-      amount: 0,
+      amount: '' as unknown as number,
       type: 'EXPENSE',
       category: '',
       date: new Date().toISOString().split('T')[0],
@@ -381,6 +384,7 @@ export default function RecordsPage() {
         formData,
         {
           headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 30000,
         }
       );
 
@@ -405,11 +409,6 @@ export default function RecordsPage() {
 
   const records = data?.data || [];
   const pagination = data?.meta;
-
-  const categories = {
-    INCOME: ['Salary', 'Freelance', 'Investment', 'Business', 'Gift', 'Other Income'],
-    EXPENSE: ['Food & Dining', 'Transportation', 'Shopping', 'Entertainment', 'Bills & Utilities', 'Healthcare', 'Education', 'Travel', 'Insurance', 'Rent', 'Other Expense'],
-  };
 
   return (
     <div>
@@ -443,7 +442,7 @@ export default function RecordsPage() {
               </svg>
               Refresh
             </button>
-            {isAdmin && (
+            {can('create:records') && (
               <button
                 type="button"
                 onClick={() => setShowCreateModal(true)}
@@ -504,7 +503,7 @@ export default function RecordsPage() {
                 className="input-field"
               >
                 <option value="">All Categories</option>
-                {[...categories.INCOME, ...categories.EXPENSE].map((cat) => (
+                {[...CATEGORIES.INCOME, ...CATEGORIES.EXPENSE].map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
@@ -575,7 +574,7 @@ export default function RecordsPage() {
             <p className="text-slate-600 dark:text-slate-400">
               {debouncedSearch 
                 ? `No results found for "${debouncedSearch}"`
-                : isAdmin 
+                : can('create:records')
                   ? 'No records yet. Click "Add Record" to create your first transaction.' 
                   : 'No records found.'}
             </p>
@@ -637,22 +636,26 @@ export default function RecordsPage() {
                         by {record.createdBy?.name || 'Unknown'}
                       </p>
                     </div>
-                    {isAdmin && (
+                    {(can('edit:records') || can('delete:records')) && (
                       <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(record)}
-                          className="p-2 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(record)}
-                          className="p-2 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-lg"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {can('edit:records') && (
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(record)}
+                            className="p-2 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {can('delete:records') && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(record)}
+                            className="p-2 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -708,7 +711,8 @@ export default function RecordsPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <form onSubmit={(e) => e.preventDefault()}>
+              <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Type *</label>
                 <select
@@ -736,8 +740,8 @@ export default function RecordsPage() {
                 <label className="block text-sm font-medium mb-2">Amount *</label>
                 <input
                   type="number"
-                  value={formData.amount || ''}
-                  onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                  value={formData.amount === 0 ? '' : formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value === '' ? '' as unknown as number : parseFloat(e.target.value) })}
                   className="input-field"
                   placeholder="0.00"
                   min="0"
@@ -753,7 +757,7 @@ export default function RecordsPage() {
                   className="input-field"
                 >
                   <option value="">Select category</option>
-                  {categories[formData.type].map((cat) => (
+                  {CATEGORIES[formData.type].map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
@@ -803,6 +807,7 @@ export default function RecordsPage() {
                 </button>
               </div>
             </div>
+            </form>
           </div>
         </div>
       )}
@@ -826,7 +831,8 @@ export default function RecordsPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <form onSubmit={(e) => e.preventDefault()}>
+              <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Type *</label>
                 <select
@@ -853,11 +859,11 @@ export default function RecordsPage() {
                 <label className="block text-sm font-medium mb-2">Amount *</label>
                 <input
                   type="number"
-                  value={formData.amount || ''}
-                  onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                  value={formData.amount === 0 ? '' : formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value === '' ? '' as unknown as number : parseFloat(e.target.value) })}
                   className="input-field"
                   min="0"
-                  step="0.01"
+                  max={new Date().toISOString().split('T')[0]}
                 />
               </div>
 
@@ -869,7 +875,7 @@ export default function RecordsPage() {
                   className="input-field"
                 >
                   <option value="">Select category</option>
-                  {categories[formData.type].map((cat) => (
+                  {CATEGORIES[formData.type].map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
@@ -984,6 +990,7 @@ export default function RecordsPage() {
                 </button>
               </div>
             </div>
+            </form>
           </div>
         </div>
       )}

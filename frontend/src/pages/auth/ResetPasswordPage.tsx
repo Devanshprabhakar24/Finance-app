@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Lock, ArrowLeft, Loader2, Eye, EyeOff, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient from '@/api/axios';
+import { registerSchema } from '@/schemas/auth.schema';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -98,10 +99,10 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    // Check password complexity
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-    if (!passwordRegex.test(newPassword)) {
-      toast.error('Password must contain uppercase, lowercase, number, and special character');
+    // Use shared password validation from auth schema
+    const result = registerSchema.shape.password.safeParse(newPassword);
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
       return;
     }
 

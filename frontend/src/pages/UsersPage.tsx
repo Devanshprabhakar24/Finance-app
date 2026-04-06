@@ -410,6 +410,7 @@ export default function UsersPage() {
 
               <div className="flex gap-3 pt-4">
                 <button
+                  type="button"
                   onClick={() => setShowEditModal(false)}
                   className="btn-secondary flex-1"
                   disabled={updateMutation.isPending}
@@ -417,6 +418,7 @@ export default function UsersPage() {
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleUpdateUser}
                   className="btn-primary flex-1"
                   disabled={updateMutation.isPending}
@@ -470,6 +472,7 @@ export default function UsersPage() {
 
               <div className="flex gap-3 pt-4">
                 <button
+                  type="button"
                   onClick={() => setShowDeleteModal(false)}
                   className="btn-secondary flex-1"
                   disabled={deleteMutation.isPending}
@@ -477,6 +480,7 @@ export default function UsersPage() {
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleConfirmDelete}
                   className="btn-danger flex-1"
                   disabled={deleteMutation.isPending}

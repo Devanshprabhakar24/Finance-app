@@ -66,10 +66,15 @@ export async function updateUser(
   id: string,
   data: UpdateUserPayload
 ): Promise<{ data: User }> {
-  // If both role and status are provided, update them separately
+  // If both role and status are provided, update them separately with error handling
   if (data.role && data.status) {
-    await updateUserRole(id, data.role);
-    return updateUserStatus(id, data.status);
+    try {
+      await updateUserRole(id, data.role);
+      return await updateUserStatus(id, data.status);
+    } catch (err) {
+      // Re-throw error so UI can handle partial failure appropriately
+      throw err;
+    }
   }
   // If only role is provided
   if (data.role) {

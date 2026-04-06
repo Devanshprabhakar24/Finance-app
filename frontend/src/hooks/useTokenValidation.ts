@@ -31,10 +31,22 @@ export const useTokenValidation = () => {
   // Fix: Use ref to avoid memory leaks from interval recreation
   const tokenRef = useRef(accessToken);
   
-  // Keep ref updated with latest token
+  // Fix: Stabilize function references to prevent stale closures
+  const logoutRef = useRef(logout);
+  const setAccessTokenRef = useRef(setAccessToken);
+  
+  // Keep refs updated with latest values
   useEffect(() => {
     tokenRef.current = accessToken;
   }, [accessToken]);
+
+  useEffect(() => {
+    logoutRef.current = logout;
+  }, [logout]);
+
+  useEffect(() => {
+    setAccessTokenRef.current = setAccessToken;
+  }, [setAccessToken]);
 
   useEffect(() => {
     if (!isHydrated || !accessToken) return;
@@ -44,7 +56,7 @@ export const useTokenValidation = () => {
         // Decode token to check expiration
         const decoded = decodeJWT(accessToken);
         if (!decoded || !decoded.exp) {
-          logout();
+          logoutRef.current();
           return;
         }
 
@@ -56,13 +68,13 @@ export const useTokenValidation = () => {
           
           try {
             const response = await refreshToken();
-            setAccessToken(response.data.accessToken);
+            setAccessTokenRef.current(response.data.accessToken);
             console.log('Token refreshed successfully');
           } catch (error) {
             // Only logout if token is actually expired
             const decoded = decodeJWT(accessToken);
             const isExpired = !decoded || decoded.exp < Date.now() / 1000;
-            if (isExpired) logout();
+            if (isExpired) logoutRef.current();
             // Otherwise do nothing — axios will handle 401s naturally
           }
         }
@@ -72,7 +84,7 @@ export const useTokenValidation = () => {
         const isExpired = !decoded || decoded.exp < Date.now() / 1000;
         if (isExpired) {
           console.log('Token expired or invalid, clearing auth');
-          logout();
+          logoutRef.current();
         } else {
           console.log('Token validation error but token still valid, continuing');
         }
@@ -80,7 +92,7 @@ export const useTokenValidation = () => {
     };
 
     validateToken();
-  }, [accessToken, setAccessToken, logout, isHydrated]);
+  }, [accessToken, isHydrated]);
 
   // Set up periodic token refresh (every 20 minutes) - stable interval
   useEffect(() => {
@@ -100,13 +112,13 @@ export const useTokenValidation = () => {
         if (decoded.exp - currentTime < 1800) {
           try {
             const response = await refreshToken();
-            setAccessToken(response.data.accessToken);
+            setAccessTokenRef.current(response.data.accessToken);
             console.log('Token refreshed automatically');
           } catch (error) {
             // Only logout if token is actually expired
             const decoded = decodeJWT(token);
             const isExpired = !decoded || decoded.exp < Date.now() / 1000;
-            if (isExpired) logout();
+            if (isExpired) logoutRef.current();
             // Otherwise do nothing — axios will handle 401s naturally
           }
         }
@@ -117,5 +129,5 @@ export const useTokenValidation = () => {
     }, 20 * 60 * 1000); // Every 20 minutes
 
     return () => clearInterval(interval);
-  }, [isHydrated, setAccessToken, logout]); // Stable dependencies - no accessToken
+  }, [isHydrated]); // Stable dependencies - no accessToken, setAccessToken, logout
 };

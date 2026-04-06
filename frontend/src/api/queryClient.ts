@@ -16,7 +16,11 @@ export const queryClient = new QueryClient({
       gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
 
       // Retry failed requests
-      retry: 1, // 1 retry
+      retry: (failureCount, error: any) => {
+        const status = error?.response?.status;
+        if (status === 401 || status === 403) return false;
+        return failureCount < 1;
+      },
 
       // Refetch on window focus (disabled for better performance)
       refetchOnWindowFocus: false,
@@ -25,7 +29,7 @@ export const queryClient = new QueryClient({
       refetchOnReconnect: true,
 
       // Don't refetch on mount if data is fresh
-      refetchOnMount: false,
+      refetchOnMount: true,
     },
     mutations: {
       // Retry failed mutations

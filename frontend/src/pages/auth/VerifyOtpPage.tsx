@@ -36,7 +36,8 @@ export default function VerifyOtpPage() {
   }, [countdown]);
 
   const verifyMutation = useMutation({
-    mutationFn: () => verifyOtp({ identifier, otp, purpose }),
+    mutationFn: (payload: { identifier: string; otp: string; purpose: string }) =>
+      verifyOtp(payload),
     onSuccess: (data) => {
       const { user, accessToken, refreshToken } = data.data;
       setUser(user);
@@ -67,7 +68,6 @@ export default function VerifyOtpPage() {
   const handleOtpChange = (value: string) => {
     setOtp(value);
     if (value.length === OTP_CONFIG.LENGTH) {
-      // Fix: Pass value directly to avoid race condition
       verifyMutation.mutate({ identifier, otp: value, purpose });
     }
   };

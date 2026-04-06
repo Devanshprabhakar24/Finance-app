@@ -9,7 +9,9 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthPageSkeleton } from '@/components/loading/AuthPageSkeleton';
 import { DashboardPageSkeleton } from '@/components/loading/DashboardPageSkeleton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import toast from 'react-hot-toast';
+import apiClient from '@/api/axios';
 
 // Lazy load pages
 const LandingPage = lazy(() => import('@/pages/auth/LandingPage'));
@@ -67,6 +69,11 @@ function App() {
         }
       },
     });
+
+    // Seed CSRF cookie before any mutations fire
+    apiClient.get('/csrf-token').catch(() => {
+      // non-critical — backend will set it on next GET anyway
+    });
   }, []);
 
   // Show loading spinner until store is hydrated
@@ -85,8 +92,9 @@ function App() {
         v7_relativeSplatPath: true,
       }}
     >
-      <Suspense fallback={<AuthPageSkeleton />}>
-        <Routes>
+      <ErrorBoundary>
+        <Suspense fallback={<AuthPageSkeleton />}>
+          <Routes>
           {/* Auth routes — light skeleton */}
           <Route 
             path="/" 
@@ -212,6 +220,7 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
+      </ErrorBoundary>
 
       {/* Toast notifications */}
       <Toaster

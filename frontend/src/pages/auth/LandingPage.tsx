@@ -68,13 +68,13 @@ export default function LandingPage() {
           {mobileMenuOpen && (
             <div className="md:hidden py-6 border-t border-slate-800">
               <div className="flex flex-col space-y-4">
-                <a href="#features" className="text-slate-300 hover:text-white transition-colors">
+                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-slate-300 hover:text-white transition-colors">
                   Features
                 </a>
-                <a href="#solutions" className="text-slate-300 hover:text-white transition-colors">
+                <a href="#solutions" onClick={() => setMobileMenuOpen(false)} className="text-slate-300 hover:text-white transition-colors">
                   Solutions
                 </a>
-                <a href="#industries" className="text-slate-300 hover:text-white transition-colors">
+                <a href="#industries" onClick={() => setMobileMenuOpen(false)} className="text-slate-300 hover:text-white transition-colors">
                   Industries
                 </a>
                 <button

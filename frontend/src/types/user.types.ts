@@ -10,15 +10,14 @@ export interface UserListItem {
 }
 
 export interface UserListResponse {
+  success: boolean;
   message: string;
-  data: {
-    users: UserListItem[];
-    pagination: {
-      total: number;
-      page: number;
-      limit: number;
-      pages: number;
-    };
+  data: UserListItem[];
+  meta: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
   };
 }
 

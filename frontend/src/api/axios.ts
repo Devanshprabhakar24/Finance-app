@@ -80,8 +80,9 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized - Token expired
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Don't retry auth endpoints to avoid infinite loops
-      if (originalRequest.url?.includes('/auth/')) {
+      // Don't retry auth endpoints or CSRF errors to avoid infinite loops
+      const errorMessage = (error.response?.data as any)?.message || '';
+      if (originalRequest.url?.includes('/auth/') || errorMessage.toLowerCase().includes('csrf')) {
         return Promise.reject(error);
       }
 
@@ -106,10 +107,18 @@ apiClient.interceptors.response.use(
 
       try {
         // Attempt to refresh token
+        const csrfCookie = document.cookie.match(/csrfToken=([^;]+)/);
+        const csrfToken = csrfCookie ? csrfCookie[1] : null;
+
         const response = await axios.post(
           `${baseURL}/auth/refresh`,
           {},
-          { withCredentials: true }
+          {
+            withCredentials: true,
+            headers: {
+              ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+            },
+          }
         );
 
         const { accessToken } = response.data.data;

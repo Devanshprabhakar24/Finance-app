@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Phone, CheckCircle, ArrowLeft, Shield, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -38,7 +38,7 @@ export default function RegisterPage() {
   const debouncedPhone = useDebounce(phone, 800);
 
   // Live email validation
-  const validateEmail = (value: string) => {
+  const validateEmail = useCallback((value: string) => {
     try {
       emailSchema.parse(value);
       setEmailError('');
@@ -48,19 +48,19 @@ export default function RegisterPage() {
       setEmailAvailable(null); // Reset availability when invalid
       return false;
     }
-  };
+  }, []);
 
-  const validateConfirmEmail = (value: string) => {
+  const validateConfirmEmail = useCallback((value: string) => {
     if (value !== email) {
       setConfirmEmailError('Emails do not match');
       return false;
     }
     setConfirmEmailError('');
     return true;
-  };
+  }, [email]);
 
   // Live phone validation
-  const validatePhone = (value: string) => {
+  const validatePhone = useCallback((value: string) => {
     try {
       phoneSchema.parse(value);
       setPhoneError('');
@@ -70,16 +70,16 @@ export default function RegisterPage() {
       setPhoneAvailable(null); // Reset availability when invalid
       return false;
     }
-  };
+  }, []);
 
-  const validateConfirmPhone = (value: string) => {
+  const validateConfirmPhone = useCallback((value: string) => {
     if (value !== phone) {
       setConfirmPhoneError('Phone numbers do not match');
       return false;
     }
     setConfirmPhoneError('');
     return true;
-  };
+  }, [phone]);
 
   // Check availability when debounced values change
   useEffect(() => {
@@ -123,7 +123,7 @@ export default function RegisterPage() {
     };
 
     checkEmailAndPhoneAvailability();
-  }, [debouncedEmail, debouncedPhone]);
+  }, [debouncedEmail, debouncedPhone, validateEmail, validatePhone]);
 
   const handleValidateEmail = () => {
     if (!validateEmail(email) || !validateConfirmEmail(confirmEmail)) {

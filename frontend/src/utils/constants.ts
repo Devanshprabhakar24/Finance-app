@@ -171,7 +171,7 @@ export const PASSWORD_REQUIREMENTS = {
   REQUIRE_LOWERCASE: true,
   REQUIRE_NUMBER: true,
   REQUIRE_SPECIAL: true,
-  SPECIAL_CHARS: '!@#$%^&*()_+-=[]{}|;:,.<>?',
+  SPECIAL_CHARS: '@$!%*?&#',
 } as const;
 
 // Chart Colors
