@@ -67,9 +67,15 @@ export const useTokenValidation = () => {
           }
         }
       } catch (error) {
-        // Invalid token format, clear it
-        console.log('Invalid token format, clearing auth');
-        logout();
+        // Only logout if token is actually expired, not on network/parsing errors
+        const decoded = decodeJWT(accessToken);
+        const isExpired = !decoded || decoded.exp < Date.now() / 1000;
+        if (isExpired) {
+          console.log('Token expired or invalid, clearing auth');
+          logout();
+        } else {
+          console.log('Token validation error but token still valid, continuing');
+        }
       }
     };
 
