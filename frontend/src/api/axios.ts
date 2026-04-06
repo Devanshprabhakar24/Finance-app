@@ -108,17 +108,16 @@ apiClient.interceptors.response.use(
 
       try {
         // Attempt to refresh token
+        // ✅ Manually attach CSRF token — raw axios bypasses the request interceptor
         const csrfCookie = document.cookie.match(/csrfToken=([^;]+)/);
-        const csrfToken = csrfCookie ? csrfCookie[1] : null;
+        const csrfHeader = csrfCookie ? { 'X-CSRF-Token': csrfCookie[1] } : {};
 
         const response = await axios.post(
           `${baseURL}/auth/refresh`,
           {},
           {
             withCredentials: true,
-            headers: {
-              ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-            },
+            headers: csrfHeader,
           }
         );
 

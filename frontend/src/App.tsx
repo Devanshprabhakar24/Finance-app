@@ -70,10 +70,8 @@ function App() {
       },
     });
 
-    // Seed CSRF cookie before any mutations fire
-    apiClient.get('/csrf-token').catch(() => {
-      // non-critical — backend will set it on next GET anyway
-    });
+    // ✅ ADD THIS — seeds the CSRF cookie before any POST/PATCH/DELETE fires
+    apiClient.get('/csrf-token').catch(() => {});
   }, []);
 
   // Show loading spinner until store is hydrated
