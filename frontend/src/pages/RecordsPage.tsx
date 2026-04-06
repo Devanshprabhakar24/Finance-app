@@ -420,6 +420,7 @@ export default function RecordsPage() {
           <div className="flex gap-2">
             {/* Manual refresh button */}
             <button
+              type="button"
               onClick={() => {
                 queryClient.invalidateQueries({ queryKey: queryKeys.records.all });
                 queryClient.refetchQueries({ 
@@ -444,6 +445,7 @@ export default function RecordsPage() {
             </button>
             {isAdmin && (
               <button
+                type="button"
                 onClick={() => setShowCreateModal(true)}
                 className="btn-primary flex items-center gap-2"
               >
@@ -545,6 +547,7 @@ export default function RecordsPage() {
             {(fromDate || toDate) && (
               <div className="flex items-end">
                 <button
+                  type="button"
                   onClick={() => {
                     setFromDate('');
                     setToDate('');
@@ -637,12 +640,14 @@ export default function RecordsPage() {
                     {isAdmin && (
                       <div className="flex gap-2">
                         <button
+                          type="button"
                           onClick={() => handleEdit(record)}
                           className="p-2 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDelete(record)}
                           className="p-2 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-lg"
                         >
@@ -663,6 +668,7 @@ export default function RecordsPage() {
                 </p>
                 <div className="flex gap-2">
                   <button
+                    type="button"
                     onClick={() => setPage(page - 1)}
                     disabled={page === 1}
                     className="btn-secondary disabled:opacity-50"
@@ -670,6 +676,7 @@ export default function RecordsPage() {
                     Previous
                   </button>
                   <button
+                    type="button"
                     onClick={() => setPage(page + 1)}
                     disabled={page === pagination.totalPages}
                     className="btn-secondary disabled:opacity-50"
