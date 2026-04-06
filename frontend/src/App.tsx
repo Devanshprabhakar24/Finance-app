@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { setTokenHelpers } from '@/api/axios';
 import { useAuthStore, selectHasHydrated } from '@/store/auth.store';
 import { initializeTheme } from '@/store/ui.store';
+import { useTokenValidation } from '@/hooks/useTokenValidation';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthPageSkeleton } from '@/components/loading/AuthPageSkeleton';
@@ -42,6 +43,9 @@ function PageLoader() {
 function App() {
   const _hasHydrated = useAuthStore(selectHasHydrated);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  // Initialize token validation to prevent automatic logout
+  useTokenValidation();
 
   // Initialize on mount - MUST be before any conditional returns
   useEffect(() => {

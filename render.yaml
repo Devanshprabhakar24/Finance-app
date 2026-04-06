@@ -30,9 +30,9 @@ services:
       - key: JWT_REFRESH_SECRET
         sync: false
       - key: JWT_ACCESS_EXPIRES
-        value: 15m
+        value: 24h
       - key: JWT_REFRESH_EXPIRES
-        value: 7d
+        value: 30d
       - key: OTP_EXPIRY_MINUTES
         value: 10
       - key: OTP_MAX_ATTEMPTS

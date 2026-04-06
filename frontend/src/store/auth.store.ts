@@ -50,12 +50,14 @@ export const useAuthStore = create<AuthState>()(
       setTokens: (accessToken, _refreshToken) =>
         set({
           accessToken,
+          isAuthenticated: true,
         }),
 
       // Update access token (used by axios interceptor)
       setAccessToken: (accessToken) =>
         set({
           accessToken,
+          isAuthenticated: true,
         }),
 
       // Logout - clear all auth data
@@ -85,8 +87,9 @@ export const useAuthStore = create<AuthState>()(
     {
       name: STORAGE_KEYS.AUTH, // localStorage key
       partialize: (state) => ({
-        // Only persist user data, NOT the access token (security)
+        // Persist user data AND access token for longer sessions
         user: state.user,
+        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {

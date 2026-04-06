@@ -1,0 +1,93 @@
+import { useEffect } from 'react';
+import { useAuthStore } from '@/store/auth.store';
+import { refreshToken } from '@/api/auth.api';
+
+/**
+ * Simple JWT decoder without external dependencies
+ */
+const decodeJWT = (token: string) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    return null;
+  }
+};
+
+/**
+ * Hook to validate and refresh tokens on app startup
+ * Prevents automatic logout due to expired tokens
+ */
+export const useTokenValidation = () => {
+  const { accessToken, setAccessToken, logout, isHydrated } = useAuthStore();
+
+  useEffect(() => {
+    if (!isHydrated || !accessToken) return;
+
+    const validateToken = async () => {
+      try {
+        // Decode token to check expiration
+        const decoded = decodeJWT(accessToken);
+        if (!decoded || !decoded.exp) {
+          logout();
+          return;
+        }
+
+        const currentTime = Date.now() / 1000;
+
+        // If token expires in less than 5 minutes, refresh it
+        if (decoded.exp - currentTime < 300) {
+          console.log('Token expiring soon, refreshing...');
+          
+          try {
+            const response = await refreshToken();
+            setAccessToken(response.data.accessToken);
+            console.log('Token refreshed successfully');
+          } catch (error) {
+            console.log('Token refresh failed, logging out');
+            logout();
+          }
+        }
+      } catch (error) {
+        // Invalid token format, clear it
+        console.log('Invalid token format, clearing auth');
+        logout();
+      }
+    };
+
+    validateToken();
+  }, [accessToken, setAccessToken, logout, isHydrated]);
+
+  // Set up periodic token refresh (every 20 minutes)
+  useEffect(() => {
+    if (!isHydrated || !accessToken) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const decoded = decodeJWT(accessToken);
+        if (!decoded || !decoded.exp) return;
+
+        const currentTime = Date.now() / 1000;
+
+        // Refresh if token expires in less than 30 minutes
+        if (decoded.exp - currentTime < 1800) {
+          const response = await refreshToken();
+          setAccessToken(response.data.accessToken);
+          console.log('Token refreshed automatically');
+        }
+      } catch (error) {
+        console.log('Automatic token refresh failed');
+        // Don't logout on automatic refresh failure, let the axios interceptor handle it
+      }
+    }, 20 * 60 * 1000); // Every 20 minutes
+
+    return () => clearInterval(interval);
+  }, [accessToken, setAccessToken, isHydrated]);
+};

@@ -22,8 +22,8 @@ const envSchema = zod_1.z.object({
     // JWT
     JWT_ACCESS_SECRET: zod_1.z.string().min(32, 'JWT access secret must be at least 32 characters'),
     JWT_REFRESH_SECRET: zod_1.z.string().min(32, 'JWT refresh secret must be at least 32 characters'),
-    JWT_ACCESS_EXPIRES: zod_1.z.string().default('15m'),
-    JWT_REFRESH_EXPIRES: zod_1.z.string().default('7d'),
+    JWT_ACCESS_EXPIRES: zod_1.z.string().default('24h'),
+    JWT_REFRESH_EXPIRES: zod_1.z.string().default('30d'),
     // OTP
     OTP_EXPIRY_MINUTES: zod_1.z.string().default('10'),
     OTP_MAX_ATTEMPTS: zod_1.z.string().default('5'),

@@ -80,6 +80,11 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized - Token expired
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't retry auth endpoints to avoid infinite loops
+      if (originalRequest.url?.includes('/auth/')) {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -124,9 +129,25 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
 
-        // Refresh failed - clear auth and redirect to login
-        clearAuth();
-        window.location.href = '/login';
+        // Only logout if refresh token is actually invalid
+        // Don't logout for network errors or temporary server issues
+        if (refreshError instanceof Error && 
+            (refreshError.message.includes('401') || 
+             refreshError.message.includes('403') ||
+             refreshError.message.includes('Invalid refresh token'))) {
+          
+          // Refresh failed - clear auth and redirect to login
+          clearAuth();
+          
+          // Only redirect if not already on login page
+          if (!window.location.pathname.includes('/login')) {
+            showToast('warning', 'Session expired. Please login again.');
+            window.location.href = '/login';
+          }
+        } else {
+          // For network errors, just show a warning but don't logout
+          showToast('warning', 'Connection issue. Please try again.');
+        }
 
         return Promise.reject(refreshError);
       } finally {
