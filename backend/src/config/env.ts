@@ -58,7 +58,7 @@ const envSchema = z.object({
   // CORS
   ALLOWED_ORIGINS: z.string().default(
     process.env.NODE_ENV === 'production' 
-      ? 'https://finance-app-one-zeta.vercel.app'
+      ? 'https://finance-app-one-zeta.vercel.app,https://finance-4loz62oky-devansh-prabhakars-projects.vercel.app'
       : 'http://localhost:3000,http://localhost:5173'
   ),
 

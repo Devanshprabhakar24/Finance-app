@@ -37,6 +37,9 @@ interface ImportMetaEnv {
   readonly VITE_DEMO_ANALYST_PASSWORD: string;
   readonly VITE_DEMO_VIEWER_EMAIL: string;
   readonly VITE_DEMO_VIEWER_PASSWORD: string;
+  
+  // Third-party Services
+  readonly VITE_CLOUDINARY_CLOUD_NAME: string;
 }
 
 interface ImportMeta {
