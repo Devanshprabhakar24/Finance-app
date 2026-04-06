@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     runtime: node
-    buildCommand: cd backend && npm ci && npm run build
+    buildCommand: buildCommand: cd backend && npm ci && npm run build && node dist/scripts/seed.js
     startCommand: cd backend && node dist/server.js
     healthCheckPath: /api/health
     envVars:
