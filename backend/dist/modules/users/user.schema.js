@@ -30,8 +30,8 @@ exports.userRegistrationSchema = zod_1.z.object({
  */
 exports.adminCreateUserSchema = exports.userRegistrationSchema.extend({
     role: zod_1.z
-        .enum(['ADMIN', 'ANALYST', 'VIEWER'], {
-        errorMap: () => ({ message: 'Role must be ADMIN, ANALYST, or VIEWER' }),
+        .enum(['ADMIN', 'ANALYST', 'USER'], {
+        errorMap: () => ({ message: 'Role must be ADMIN, ANALYST, or USER' }),
     })
         .optional(),
 });
@@ -56,8 +56,8 @@ exports.updateProfileSchema = zod_1.z.object({
         .optional(),
 });
 exports.updateRoleSchema = zod_1.z.object({
-    role: zod_1.z.enum(['ADMIN', 'ANALYST', 'VIEWER'], {
-        errorMap: () => ({ message: 'Role must be ADMIN, ANALYST, or VIEWER' }),
+    role: zod_1.z.enum(['ADMIN', 'ANALYST', 'USER'], {
+        errorMap: () => ({ message: 'Role must be ADMIN, ANALYST, or USER' }),
     }),
 });
 exports.updateStatusSchema = zod_1.z.object({

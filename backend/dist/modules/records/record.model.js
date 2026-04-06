@@ -80,6 +80,12 @@ const financialRecordSchema = new mongoose_1.Schema({
     attachmentPublicId: {
         type: String,
     },
+    userId: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'User',
+        required: [true, 'User ID is required'], // 🔒 SECURITY: Now required for data isolation
+        index: true,
+    },
     createdBy: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'User',
@@ -102,6 +108,7 @@ const financialRecordSchema = new mongoose_1.Schema({
     timestamps: true,
 });
 // Compound indexes for performance
+financialRecordSchema.index({ userId: 1, isDeleted: 1, date: -1 });
 financialRecordSchema.index({ isDeleted: 1, date: -1 });
 financialRecordSchema.index({ isDeleted: 1, type: 1, category: 1 });
 financialRecordSchema.index({ isDeleted: 1, type: 1, category: 1, date: -1 }); // For dashboard aggregations

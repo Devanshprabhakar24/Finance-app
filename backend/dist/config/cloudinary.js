@@ -29,7 +29,7 @@ const uploadToCloudinary = (buffer, folder, resourceType = 'auto') => {
             resource_type: resourceType,
             allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'webp'],
             max_file_size: 5 * 1024 * 1024, // 5MB
-            timeout: 60000, // Add explicit timeout
+            timeout: 60000,
         }, (error, result) => {
             if (error) {
                 logger_1.logger.error('Cloudinary upload error:', error);

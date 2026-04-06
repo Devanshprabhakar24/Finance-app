@@ -42,16 +42,28 @@ export default function VerifyOtpPage() {
     onSuccess: (data) => {
       const { user, accessToken, refreshToken } = data.data;
       
-      // 🔒 SECURITY: Clear all cached queries before setting new user
+      // 🔒 SECURITY: Clear all cached queries AND localStorage before setting new user
       // This prevents new user from seeing previous user's cached data
       queryClient.clear();
+      
+      // Also clear any stale data from localStorage
+      try {
+        const authKey = 'auth-storage';
+        localStorage.removeItem(authKey);
+      } catch (error) {
+        console.warn('Failed to clear localStorage:', error);
+      }
       
       // Set new user and tokens
       setUser(user);
       setTokens(accessToken, refreshToken);
       
       toast.success('Login successful!');
-      navigate('/dashboard');
+      
+      // Navigate after a small delay to ensure state is updated
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 100);
     },
     onError: (error: any) => {
       setError(true);

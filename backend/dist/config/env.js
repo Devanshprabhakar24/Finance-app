@@ -47,8 +47,13 @@ const envSchema = zod_1.z.object({
     CLOUDINARY_CLOUD_NAME: zod_1.z.string().min(1, 'Cloudinary cloud name is required'),
     CLOUDINARY_API_KEY: zod_1.z.string().min(1, 'Cloudinary API key is required'),
     CLOUDINARY_API_SECRET: zod_1.z.string().min(1, 'Cloudinary API secret is required'),
+    // Application Configuration
+    APP_NAME: zod_1.z.string().default('Finance Dashboard API'),
+    SUPPORT_EMAIL: zod_1.z.string().email().default('support@finance-dashboard.dev'),
     // CORS
-    ALLOWED_ORIGINS: zod_1.z.string().default('http://localhost:3000,http://localhost:5173'),
+    ALLOWED_ORIGINS: zod_1.z.string().default(process.env.NODE_ENV === 'production'
+        ? 'https://finance-app-one-zeta.vercel.app,https://finance-4loz62oky-devansh-prabhakars-projects.vercel.app'
+        : 'http://localhost:3000,http://localhost:5173'),
     // Redis (Section 5.1 - optional, gracefully degrades if not configured)
     REDIS_URL: zod_1.z.string().url().optional(),
 });

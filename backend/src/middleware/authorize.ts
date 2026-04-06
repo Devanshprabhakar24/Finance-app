@@ -64,9 +64,8 @@ export const resolveTargetUser = (req: Request, _res: Response, next: NextFuncti
     throw new UnauthorizedError('Authentication required');
   }
 
-  console.log('🔐 resolveTargetUser - User:', req.user.id, req.user.email, req.user.role);
-  console.log('🔐 resolveTargetUser - Query userId:', req.query?.userId);
-  console.log('🔐 resolveTargetUser - Body userId:', req.body?.userId);
+  // 🔒 CRITICAL FIX: Use _id (MongoDB field) not id
+  const userId = req.user._id.toString();
 
   // Admin can target any user
   if (req.user.role === UserRole.ADMIN) {
@@ -90,15 +89,13 @@ export const resolveTargetUser = (req: Request, _res: Response, next: NextFuncti
       req.targetUserId = req.query.userId as string;
     } else {
       // Default to analyst's own userId to prevent data leakage
-      req.targetUserId = req.user.id;
+      req.targetUserId = userId;
     }
   } 
   // Regular user always sees only themselves
   else {
-    req.targetUserId = req.user.id;
+    req.targetUserId = userId;
   }
-
-  console.log('🔐 resolveTargetUser - Final targetUserId:', req.targetUserId);
 
   next();
 };

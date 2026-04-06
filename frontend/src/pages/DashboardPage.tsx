@@ -41,15 +41,28 @@ export default function DashboardPage() {
   const previousUserIdRef = useRef<string | null>(null);
   
   useEffect(() => {
-    console.log('🔍 Dashboard - Current user:', user?._id, user?.email, user?.role);
+    const currentUserId = user?._id;
     
-    if (user?._id && previousUserIdRef.current && previousUserIdRef.current !== user._id) {
-      // User changed - clear all cached data
-      console.log('⚠️ User changed! Clearing cache. Old:', previousUserIdRef.current, 'New:', user._id);
+    // If user changed, clear cache immediately
+    if (currentUserId && previousUserIdRef.current && previousUserIdRef.current !== currentUserId) {
+      console.warn('User changed detected! Clearing all cache.');
       queryClient.clear();
+      
+      // Force a hard reload to ensure clean state
+      window.location.reload();
     }
-    previousUserIdRef.current = user?._id || null;
+    
+    previousUserIdRef.current = currentUserId || null;
   }, [user?._id]);
+  
+  // 🔒 SECURITY: Don't render anything until we have a valid user
+  if (!user?._id) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // Date range state
   const [fromDate, setFromDate] = useState<string>('');

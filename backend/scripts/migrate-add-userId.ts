@@ -9,12 +9,12 @@ import mongoose from 'mongoose';
 import { FinancialRecord } from '../src/modules/records/record.model';
 import { User } from '../src/modules/users/user.model';
 import { logger } from '../src/utils/logger';
-import { config } from '../src/config/env';
+import { env } from '../src/config/env';
 
 async function migrateRecords() {
   try {
     // Connect to database
-    await mongoose.connect(config.database.uri);
+    await mongoose.connect(env.mongodbUri);
     logger.info('✅ Connected to database');
 
     // Step 1: Migrate user roles from VIEWER to USER

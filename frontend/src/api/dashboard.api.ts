@@ -46,9 +46,7 @@ export interface RecentRecord {
  * Admin/Analyst can pass userId to view specific user's stats
  */
 export async function getSummary(params?: { from?: string; to?: string; userId?: string }) {
-  console.log('📊 API Call - getSummary with params:', params);
   const response = await apiClient.get('/dashboard/summary', { params });
-  console.log('📊 API Response - getSummary:', response.data);
   return response.data;
 }
 

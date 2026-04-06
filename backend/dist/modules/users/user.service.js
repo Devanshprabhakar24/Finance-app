@@ -89,7 +89,7 @@ const adminCreateUser = async (data) => {
         email: data.email,
         phone: data.phone,
         passwordHash,
-        role: data.role ?? user_model_1.UserRole.VIEWER,
+        role: data.role ?? user_model_1.UserRole.USER,
         status: user_model_1.UserStatus.ACTIVE,
         isVerified: true,
     });

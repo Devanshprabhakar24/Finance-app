@@ -70,6 +70,15 @@ export default function RecordsPage() {
     queryClient.invalidateQueries({ queryKey: queryKeys.records.all(user._id) });
     queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all(user._id) });
   };
+  
+  // 🔒 SECURITY: Don't render until we have a valid user
+  if (!user?._id) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // State
   const [search, setSearch] = useState('');

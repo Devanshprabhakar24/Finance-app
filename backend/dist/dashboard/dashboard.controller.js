@@ -53,7 +53,7 @@ const parseDate = (val, paramName) => {
 };
 /**
  * GET /api/dashboard/summary
- * Optional query: ?from=ISO&to=ISO
+ * Optional query: ?from=ISO&to=ISO&userId=xxx
  */
 exports.getSummary = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const from = parseDate(req.query.from, 'from');
@@ -61,44 +61,44 @@ exports.getSummary = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     if (from && to && from > to) {
         throw new errorHandler_1.ValidationError("'from' date must be before or equal to 'to' date");
     }
-    const summary = await dashboardService.getDashboardSummary(from || to ? { from, to } : undefined);
+    const summary = await dashboardService.getDashboardSummary(req.user.role, req.targetUserId, from || to ? { from, to } : undefined);
     (0, response_1.sendSuccess)(res, 'Dashboard summary retrieved successfully', summary);
 });
 /**
  * GET /api/dashboard/by-category
- * Optional query: ?from=ISO&to=ISO
+ * Optional query: ?from=ISO&to=ISO&userId=xxx
  */
 exports.getByCategory = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const from = parseDate(req.query.from, 'from');
     const to = parseDate(req.query.to, 'to');
-    const categoryData = await dashboardService.getRecordsByCategory(from || to ? { from, to } : undefined);
+    const categoryData = await dashboardService.getRecordsByCategory(req.user.role, req.targetUserId, from || to ? { from, to } : undefined);
     (0, response_1.sendSuccess)(res, 'Category breakdown retrieved successfully', categoryData);
 });
 /**
  * GET /api/dashboard/trends
- * Optional query: ?year=2024
+ * Optional query: ?year=2024&userId=xxx
  */
 exports.getTrends = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const year = req.query.year ? parseInt(req.query.year) : undefined;
-    const trends = await dashboardService.getMonthlyTrends(year);
+    const trends = await dashboardService.getMonthlyTrends(req.user.role, req.targetUserId, year);
     (0, response_1.sendSuccess)(res, 'Monthly trends retrieved successfully', trends);
 });
 /**
  * GET /api/dashboard/recent
- * Optional query: ?limit=10 (max 20)
+ * Optional query: ?limit=10&userId=xxx (max 20)
  */
 exports.getRecent = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const limit = req.query.limit ? parseInt(req.query.limit) : 10;
-    const records = await dashboardService.getRecentRecords(limit);
+    const records = await dashboardService.getRecentRecords(req.user.role, req.targetUserId, limit);
     (0, response_1.sendSuccess)(res, 'Recent records retrieved successfully', records);
 });
 /**
  * GET /api/dashboard/top-categories
- * Optional query: ?from=ISO&to=ISO
+ * Optional query: ?from=ISO&to=ISO&userId=xxx
  */
 exports.getTopCategories = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const from = parseDate(req.query.from, 'from');
     const to = parseDate(req.query.to, 'to');
-    const topCategories = await dashboardService.getTopExpenseCategories(from || to ? { from, to } : undefined);
+    const topCategories = await dashboardService.getTopExpenseCategories(req.user.role, req.targetUserId, from || to ? { from, to } : undefined);
     (0, response_1.sendSuccess)(res, 'Top expense categories retrieved successfully', topCategories);
 });

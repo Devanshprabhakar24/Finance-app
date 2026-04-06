@@ -29,6 +29,7 @@ const auth_routes_1 = __importDefault(require("./modules/auth/auth.routes"));
 const user_routes_1 = __importDefault(require("./modules/users/user.routes"));
 const record_routes_1 = __importDefault(require("./modules/records/record.routes"));
 const dashboard_routes_1 = __importDefault(require("./dashboard/dashboard.routes"));
+const migration_routes_1 = __importDefault(require("./routes/migration.routes"));
 // Import swagger
 const swagger_1 = require("./swagger/swagger");
 /**
@@ -63,6 +64,10 @@ const createApp = () => {
                 return callback(null, true); // Allow server-to-server
             if (env_1.env.allowedOrigins.includes(origin))
                 return callback(null, true);
+            // Allow Vercel preview deployment URLs for this project
+            if (/^https:\/\/finance-[a-z0-9-]+-devansh-prabhakars-projects\.vercel\.app$/.test(origin)) {
+                return callback(null, true);
+            }
             callback(new Error(`CORS: origin ${origin} not allowed`));
         },
         credentials: true,
@@ -117,7 +122,7 @@ const createApp = () => {
     });
     // Rate limiting
     app.use(rateLimiter_1.globalLimiter);
-    // CSRF protection
+    // CSRF protection (disabled — app uses JWT Bearer auth, see csrf.ts)
     app.use(csrf_1.generateCsrfToken);
     app.use(csrf_1.verifyCsrfToken);
     // Section 2.5: Request timeout middleware
@@ -140,9 +145,20 @@ const createApp = () => {
             mongo: mongoose_1.default.connection.readyState === 1 ? 'connected' : 'disconnected',
         });
     });
-    // CSRF token endpoint for frontend
+    // CSRF token endpoint — always issues a fresh token and sets the cookie.
+    // The frontend calls this on startup, stores the token in memory, and sends
+    // it back as X-CSRF-Token on every mutating request.
     app.get('/api/csrf-token', (req, res) => {
-        res.json({ csrfToken: req.csrfToken });
+        // Force a fresh token on every call so the frontend is never stale
+        const token = require('crypto').randomBytes(32).toString('hex');
+        res.cookie('csrfToken', token, {
+            httpOnly: false,
+            secure: true,
+            sameSite: 'none',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
+        req.csrfToken = token; // keep in sync for any downstream middleware
+        res.json({ csrfToken: token });
     });
     // Section 4.4: Prometheus metrics endpoint
     app.get('/metrics', async (_req, res) => {
@@ -154,6 +170,7 @@ const createApp = () => {
     app.use('/api/users', user_routes_1.default);
     app.use('/api/records', record_routes_1.default);
     app.use('/api/dashboard', dashboard_routes_1.default);
+    app.use('/api/migrate', migration_routes_1.default);
     // Section 7.4: Disable Swagger in production
     if (env_1.env.nodeEnv !== 'production') {
         app.use('/api/docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.swaggerSpec));

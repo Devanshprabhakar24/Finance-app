@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { getUsers, updateUser, deleteUser } from '@/api/users.api';
 import { queryKeys } from '@/api/queryClient';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useAuthStore } from '@/store/auth.store';
 import type { User } from '@/types/index';
 import { 
   Users, 
@@ -22,6 +23,17 @@ import toast from 'react-hot-toast';
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  
+  // 🔒 SECURITY: Don't render until we have a valid user
+  if (!user?._id) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -42,7 +54,7 @@ export default function UsersPage() {
 
   // 🔒 SECURITY: Fetch users with userId in query key to prevent cache collisions
   const { data, isLoading, error } = useQuery({
-    queryKey: queryKeys.users.list(user?._id || '', { 
+    queryKey: queryKeys.users.list(user._id, { 
       search: debouncedSearch || undefined, 
       role: roleFilter || undefined, 
       status: statusFilter || undefined, 

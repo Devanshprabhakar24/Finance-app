@@ -34,6 +34,16 @@ const LazyBarChart = lazy(() => import('@/components/charts/LazyBarChart'));
 
 export default function AnalyticsPage() {
   const { user } = useAuthStore();
+  
+  // 🔒 SECURITY: Don't render until we have a valid user
+  if (!user?._id) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+  
   const isAnalystOrAdmin = user?.role === 'ANALYST' || user?.role === 'ADMIN';
   const isAdmin = user?.role === 'ADMIN';
   const isAnalyst = user?.role === 'ANALYST';

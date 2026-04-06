@@ -43,7 +43,7 @@ const errorHandler_1 = require("../../middleware/errorHandler");
  */
 exports.createRecord = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const data = req.body;
-    const record = await recordService.createRecord(data, req.user._id.toString());
+    const record = await recordService.createRecord(data, req.targetUserId || req.user._id.toString(), req.user.role, req.user._id.toString());
     (0, response_1.sendSuccess)(res, 'Financial record created successfully', record, undefined, 201);
 });
 /**
@@ -51,14 +51,14 @@ exports.createRecord = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
  */
 exports.getAllRecords = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const filters = req.query;
-    const result = await recordService.getAllRecords(filters);
+    const result = await recordService.getAllRecords(filters, req.targetUserId, req.user.role);
     (0, response_1.sendSuccess)(res, 'Financial records retrieved successfully', result.data, result.meta);
 });
 /**
  * GET /api/records/:id
  */
 exports.getRecordById = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
-    const record = await recordService.getRecordById(req.params.id);
+    const record = await recordService.getRecordById(req.params.id, req.user._id.toString(), req.user.role);
     (0, response_1.sendSuccess)(res, 'Financial record retrieved successfully', record);
 });
 /**
@@ -66,14 +66,14 @@ exports.getRecordById = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
  */
 exports.updateRecord = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
     const data = req.body;
-    const record = await recordService.updateRecord(req.params.id, data, req.user._id.toString());
+    const record = await recordService.updateRecord(req.params.id, data, req.user._id.toString(), req.user.role);
     (0, response_1.sendSuccess)(res, 'Financial record updated successfully', record);
 });
 /**
  * DELETE /api/records/:id
  */
 exports.deleteRecord = (0, asyncHandler_1.asyncHandler)(async (req, res) => {
-    await recordService.deleteRecord(req.params.id, req.user._id.toString());
+    await recordService.deleteRecord(req.params.id, req.user._id.toString(), req.user.role);
     (0, response_1.sendSuccess)(res, 'Financial record deleted successfully');
 });
 /**
@@ -83,6 +83,11 @@ exports.uploadAttachment = (0, asyncHandler_1.asyncHandler)(async (req, res) => 
     if (!req.file) {
         throw new errorHandler_1.ValidationError('No file uploaded');
     }
-    const record = await recordService.uploadAttachment(req.params.id, req.file.buffer);
-    (0, response_1.sendSuccess)(res, 'Attachment uploaded successfully', { attachmentUrl: record.attachmentUrl });
+    // Use 'raw' for PDFs so Cloudinary serves them correctly, 'image' for images
+    const resourceType = req.file.mimetype === 'application/pdf' ? 'raw' : 'image';
+    const record = await recordService.uploadAttachment(req.params.id, req.file.buffer, resourceType, req.user._id.toString(), req.user.role);
+    (0, response_1.sendSuccess)(res, 'Attachment uploaded successfully', {
+        attachmentUrl: record.attachmentUrl,
+        attachmentPublicId: record.attachmentPublicId,
+    });
 });

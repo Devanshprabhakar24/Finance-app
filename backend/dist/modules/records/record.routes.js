@@ -42,7 +42,6 @@ const recordController = __importStar(require("./record.controller"));
 const authenticate_1 = require("../../middleware/authenticate");
 const authorize_1 = require("../../middleware/authorize");
 const validate_1 = require("../../middleware/validate");
-const user_model_1 = require("../users/user.model");
 const record_schema_1 = require("./record.schema");
 const router = (0, express_1.Router)();
 const upload = (0, multer_1.default)({
@@ -58,13 +57,18 @@ const upload = (0, multer_1.default)({
         }
     },
 });
+// All routes require authentication
 router.use(authenticate_1.authenticate);
-// Read — ANALYST and ADMIN
-router.get('/', (0, authorize_1.requireRole)(user_model_1.UserRole.ANALYST, user_model_1.UserRole.ADMIN), (0, validate_1.validateQuery)(record_schema_1.recordFilterSchema), recordController.getAllRecords);
-router.get('/:id', (0, authorize_1.requireRole)(user_model_1.UserRole.ANALYST, user_model_1.UserRole.ADMIN), recordController.getRecordById);
-// Write — ADMIN only
-router.post('/', (0, authorize_1.requireRole)(user_model_1.UserRole.ADMIN), (0, validate_1.validateBody)(record_schema_1.createRecordSchema), recordController.createRecord);
-router.patch('/:id', (0, authorize_1.requireRole)(user_model_1.UserRole.ADMIN), (0, validate_1.validateBody)(record_schema_1.updateRecordSchema), recordController.updateRecord);
-router.delete('/:id', (0, authorize_1.requireRole)(user_model_1.UserRole.ADMIN), recordController.deleteRecord);
-router.post('/:id/attachment', (0, authorize_1.requireRole)(user_model_1.UserRole.ADMIN), upload.single('attachment'), recordController.uploadAttachment);
+// GET /records - All authenticated users can access (RBAC in service layer)
+router.get('/', authorize_1.resolveTargetUser, (0, validate_1.validateQuery)(record_schema_1.recordFilterSchema), recordController.getAllRecords);
+// GET /records/:id - All authenticated users (RBAC in service layer)
+router.get('/:id', recordController.getRecordById);
+// POST /records - Admin and User can create (Analyst forbidden in service)
+router.post('/', authorize_1.resolveTargetUser, (0, validate_1.validateBody)(record_schema_1.createRecordSchema), recordController.createRecord);
+// PATCH /records/:id - Admin and User can update (Analyst forbidden in service)
+router.patch('/:id', (0, validate_1.validateBody)(record_schema_1.updateRecordSchema), recordController.updateRecord);
+// DELETE /records/:id - Admin and User can delete (Analyst forbidden in service)
+router.delete('/:id', recordController.deleteRecord);
+// POST /records/:id/attachment - Admin and User can upload
+router.post('/:id/attachment', upload.single('attachment'), recordController.uploadAttachment);
 exports.default = router;

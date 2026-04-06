@@ -39,12 +39,13 @@ exports.globalLimiter = (0, express_rate_limit_1.default)({
     skip: () => process.env.NODE_ENV === 'test',
 });
 /**
- * Auth routes rate limiter — 10 requests per 15 minutes per IP.
+ * Auth routes rate limiter — 10 requests per 15 minutes per IP (production).
+ * In development: 100 requests per 15 minutes for easier testing.
  * Applied to /login and /register.
  */
 exports.authLimiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
-    max: 10,
+    max: process.env.NODE_ENV === 'production' ? 10 : 100,
     store: getStore(),
     message: {
         success: false,

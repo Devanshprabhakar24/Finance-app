@@ -37,21 +37,19 @@ const express_1 = require("express");
 const dashboardController = __importStar(require("./dashboard.controller"));
 const authenticate_1 = require("../middleware/authenticate");
 const authorize_1 = require("../middleware/authorize");
-const user_model_1 = require("../modules/users/user.model");
 const cacheControl_1 = require("../middleware/cacheControl");
 const router = (0, express_1.Router)();
 router.use(authenticate_1.authenticate);
-// ── All authenticated users including VIEWER ────────────────────────────────
+// All dashboard routes use resolveTargetUser to handle RBAC
 // Section 2.1: Cache control for dashboard endpoints
 // Summary: cache 2 min browser, 5 min CDN
-router.get('/summary', (0, cacheControl_1.cacheControl)(120, 300), dashboardController.getSummary);
+router.get('/summary', authorize_1.resolveTargetUser, (0, cacheControl_1.cacheControl)(120, 300), dashboardController.getSummary);
 // Recent records: short cache since records change frequently
-router.get('/recent', (0, cacheControl_1.cacheControl)(30, 60), dashboardController.getRecent);
-// ── ANALYST and ADMIN only ──────────────────────────────────────────────────
+router.get('/recent', authorize_1.resolveTargetUser, (0, cacheControl_1.cacheControl)(30, 60), dashboardController.getRecent);
 // Categories: 5 min cache
-router.get('/by-category', (0, authorize_1.requireRole)(user_model_1.UserRole.ANALYST, user_model_1.UserRole.ADMIN), (0, cacheControl_1.cacheControl)(300, 600), dashboardController.getByCategory);
+router.get('/by-category', authorize_1.resolveTargetUser, (0, cacheControl_1.cacheControl)(300, 600), dashboardController.getByCategory);
 // Trends: cache 10 min (changes once per month at most)
-router.get('/trends', (0, authorize_1.requireRole)(user_model_1.UserRole.ANALYST, user_model_1.UserRole.ADMIN), (0, cacheControl_1.cacheControl)(600, 1800), dashboardController.getTrends);
+router.get('/trends', authorize_1.resolveTargetUser, (0, cacheControl_1.cacheControl)(600, 1800), dashboardController.getTrends);
 // Top categories: 5 min cache
-router.get('/top-categories', (0, authorize_1.requireRole)(user_model_1.UserRole.ANALYST, user_model_1.UserRole.ADMIN), (0, cacheControl_1.cacheControl)(300, 600), dashboardController.getTopCategories);
+router.get('/top-categories', authorize_1.resolveTargetUser, (0, cacheControl_1.cacheControl)(300, 600), dashboardController.getTopCategories);
 exports.default = router;

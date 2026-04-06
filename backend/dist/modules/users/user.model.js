@@ -39,7 +39,7 @@ var UserRole;
 (function (UserRole) {
     UserRole["ADMIN"] = "ADMIN";
     UserRole["ANALYST"] = "ANALYST";
-    UserRole["VIEWER"] = "VIEWER";
+    UserRole["USER"] = "USER";
 })(UserRole || (exports.UserRole = UserRole = {}));
 var UserStatus;
 (function (UserStatus) {
@@ -77,7 +77,7 @@ const userSchema = new mongoose_1.Schema({
     role: {
         type: String,
         enum: Object.values(UserRole),
-        default: UserRole.VIEWER,
+        default: UserRole.USER,
     },
     status: {
         type: String,

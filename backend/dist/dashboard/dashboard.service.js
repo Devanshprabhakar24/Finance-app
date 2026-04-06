@@ -3,12 +3,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getTopExpenseCategories = exports.getRecentRecords = exports.getMonthlyTrends = exports.getRecordsByCategory = exports.getDashboardSummary = void 0;
 const record_model_1 = require("../modules/records/record.model");
 const logger_1 = require("../utils/logger");
+const mongoose_1 = require("mongoose");
 /**
- * Build a Mongoose $match stage that respects an optional date range.
+ * Build a Mongoose $match stage that respects an optional date range and userId filter.
  * Used across all aggregations for consistency.
  */
-const buildBaseMatch = (range) => {
+const buildBaseMatch = (range, targetUserId) => {
     const match = { isDeleted: false };
+    // Add userId filter if provided
+    if (targetUserId) {
+        match.userId = new mongoose_1.Types.ObjectId(targetUserId);
+    }
     if (range?.from || range?.to) {
         const dateFilter = {};
         if (range.from)
@@ -20,12 +25,17 @@ const buildBaseMatch = (range) => {
     return match;
 };
 /**
- * Get dashboard summary — supports an optional date range filter.
- * Section 1.5: Uses $facet to compute summary and count in a single pipeline pass
+ * Get dashboard summary with RBAC
+ * - Admin with no targetUserId: aggregate stats across ALL users
+ * - Admin with targetUserId: stats for that specific user
+ * - Analyst with targetUserId: stats for that specific user (read only)
+ * - User: always stats for their own userId
  */
-const getDashboardSummary = async (range) => {
+const getDashboardSummary = async (requestingUserRole, targetUserId, range) => {
+    // Build match filter based on role and targetUserId
+    const match = buildBaseMatch(range, targetUserId);
     const result = await record_model_1.FinancialRecord.aggregate([
-        { $match: buildBaseMatch(range) },
+        { $match: match },
         {
             $facet: {
                 byType: [
@@ -55,7 +65,7 @@ const getDashboardSummary = async (range) => {
             expenseCount = item.count;
         }
     });
-    logger_1.logger.info('Dashboard summary generated');
+    logger_1.logger.info(`Dashboard summary generated for role: ${requestingUserRole}, targetUserId: ${targetUserId || 'all'}`);
     return {
         totalIncome,
         totalExpense,
@@ -73,11 +83,12 @@ const getDashboardSummary = async (range) => {
 };
 exports.getDashboardSummary = getDashboardSummary;
 /**
- * Get records by category with optional date range.
+ * Get records by category with optional date range and userId filter.
  */
-const getRecordsByCategory = async (range) => {
+const getRecordsByCategory = async (requestingUserRole, targetUserId, range) => {
+    const match = buildBaseMatch(range, targetUserId);
     const result = await record_model_1.FinancialRecord.aggregate([
-        { $match: buildBaseMatch(range) },
+        { $match: match },
         {
             $group: {
                 _id: { category: '$category', type: '$type' },
@@ -99,22 +110,24 @@ const getRecordsByCategory = async (range) => {
 };
 exports.getRecordsByCategory = getRecordsByCategory;
 /**
- * Get monthly trends for a given year (defaults to current year).
+ * Get monthly trends for a given year with userId filter.
  */
-const getMonthlyTrends = async (year) => {
+const getMonthlyTrends = async (requestingUserRole, targetUserId, year) => {
     const targetYear = year || new Date().getFullYear();
     if (isNaN(targetYear) || targetYear < 2000 || targetYear > 2100) {
         throw new Error('Invalid year parameter');
     }
     const startDate = new Date(targetYear, 0, 1);
     const endDate = new Date(targetYear, 11, 31, 23, 59, 59);
+    const match = {
+        isDeleted: false,
+        date: { $gte: startDate, $lte: endDate },
+    };
+    if (targetUserId) {
+        match.userId = new mongoose_1.Types.ObjectId(targetUserId);
+    }
     const result = await record_model_1.FinancialRecord.aggregate([
-        {
-            $match: {
-                isDeleted: false,
-                date: { $gte: startDate, $lte: endDate },
-            },
-        },
+        { $match: match },
         {
             $group: {
                 _id: {
@@ -152,15 +165,20 @@ const getMonthlyTrends = async (year) => {
 };
 exports.getMonthlyTrends = getMonthlyTrends;
 /**
- * Get recent records (max 20).
+ * Get recent records with userId filter (max 20).
  */
-const getRecentRecords = async (limit = 10) => {
+const getRecentRecords = async (requestingUserRole, targetUserId, limit = 10) => {
     const maxLimit = Math.min(Math.max(1, limit), 20);
-    const records = await record_model_1.FinancialRecord.find({ isDeleted: false })
-        .select('title amount type category date createdBy createdAt')
+    const query = { isDeleted: false };
+    if (targetUserId) {
+        query.userId = new mongoose_1.Types.ObjectId(targetUserId);
+    }
+    const records = await record_model_1.FinancialRecord.find(query)
+        .select('title amount type category date createdBy userId createdAt')
         .sort({ date: -1, createdAt: -1 })
         .limit(maxLimit)
         .populate('createdBy', 'name email')
+        .populate('userId', 'name email')
         .lean()
         .exec();
     logger_1.logger.info(`Recent records retrieved (limit: ${maxLimit})`);
@@ -168,10 +186,10 @@ const getRecentRecords = async (limit = 10) => {
 };
 exports.getRecentRecords = getRecentRecords;
 /**
- * Get top 5 expense categories with optional date range.
+ * Get top 5 expense categories with optional date range and userId filter.
  */
-const getTopExpenseCategories = async (range) => {
-    const match = buildBaseMatch(range);
+const getTopExpenseCategories = async (requestingUserRole, targetUserId, range) => {
+    const match = buildBaseMatch(range, targetUserId);
     match.type = record_model_1.RecordType.EXPENSE;
     const result = await record_model_1.FinancialRecord.aggregate([
         { $match: match },
