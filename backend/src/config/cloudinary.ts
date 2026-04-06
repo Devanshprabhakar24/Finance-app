@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+  import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
 import { env } from './env';
 import { logger } from '../utils/logger';
@@ -37,7 +37,7 @@ export const uploadToCloudinary = (
         resource_type: resourceType,
         allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'webp'],
         max_file_size: 5 * 1024 * 1024, // 5MB
-        timeout: 60000,  // Add explicit timeout
+        timeout: 60000,
       },
       (error, result) => {
         if (error) {

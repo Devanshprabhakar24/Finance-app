@@ -31,6 +31,9 @@ import type { CreateRecordPayload } from '@/api/records.api';
 
 import apiClient from '@/api/axios';
 
+// Return the Cloudinary URL directly — secure_url from Cloudinary is always publicly viewable
+const toInlineUrl = (url: string): string => url;
+
 interface ApiError {
   response?: {
     data?: {
@@ -605,7 +608,7 @@ export default function RecordsPage() {
                         {record.title}
                         {record.attachmentUrl && (
                           <a
-                            href={record.attachmentUrl}
+                            href={toInlineUrl(record.attachmentUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -926,7 +929,7 @@ export default function RecordsPage() {
                       </span>
                     </div>
                     <a
-                      href={selectedRecord.attachmentUrl}
+                      href={toInlineUrl(selectedRecord.attachmentUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"

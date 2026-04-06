@@ -136,7 +136,8 @@ export const deleteRecord = async (
  */
 export const uploadAttachment = async (
   recordId: string,
-  buffer: Buffer
+  buffer: Buffer,
+  resourceType: 'image' | 'raw' = 'image'
 ): Promise<IFinancialRecord> => {
   const record = await FinancialRecord.findOne({ _id: recordId, isDeleted: false });
   if (!record) throw new NotFoundError('Financial record not found');
@@ -149,7 +150,7 @@ export const uploadAttachment = async (
     }
   }
 
-  const result = await uploadToCloudinary(buffer, 'finance-dashboard/attachments', 'auto');
+  const result = await uploadToCloudinary(buffer, 'finance-dashboard/attachments', resourceType);
   record.attachmentUrl = result.url;
   record.attachmentPublicId = result.publicId;
   await record.save();

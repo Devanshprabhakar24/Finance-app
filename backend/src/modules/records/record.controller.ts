@@ -59,6 +59,11 @@ export const uploadAttachment = asyncHandler(async (req: Request, res: Response)
   if (!req.file) {
     throw new ValidationError('No file uploaded');
   }
-  const record = await recordService.uploadAttachment(req.params.id, req.file.buffer);
-  sendSuccess(res, 'Attachment uploaded successfully', { attachmentUrl: record.attachmentUrl });
+  // Use 'raw' for PDFs so Cloudinary serves them correctly, 'image' for images
+  const resourceType = req.file.mimetype === 'application/pdf' ? 'raw' : 'image';
+  const record = await recordService.uploadAttachment(req.params.id, req.file.buffer, resourceType);
+  sendSuccess(res, 'Attachment uploaded successfully', {
+    attachmentUrl: record.attachmentUrl,
+    attachmentPublicId: record.attachmentPublicId,
+  });
 });
