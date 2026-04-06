@@ -68,11 +68,7 @@ export default function VerifyOtpPage() {
     setOtp(value);
     if (value.length === OTP_CONFIG.LENGTH) {
       // Fix: Pass value directly to avoid race condition
-      verifyMutation.mutate({
-        identifier,
-        otp: value, // Use the value parameter directly
-        purpose,
-      });
+      verifyMutation.mutate({ identifier, otp: value, purpose });
     }
   };
 
@@ -138,7 +134,7 @@ export default function VerifyOtpPage() {
                 <div>
                   <p className="text-sm text-blue-300 font-medium">Email OTP</p>
                   <p className="text-xs text-blue-400 mt-1">Check your inbox for the verification code</p>
-                  {process.env.NODE_ENV === 'development' && (
+                  {import.meta.env.DEV && (
                     <p className="text-xs text-yellow-400 mt-1 font-medium">
                       💡 Test Mode: Use "123456"
                     </p>
@@ -150,7 +146,7 @@ export default function VerifyOtpPage() {
                 <div>
                   <p className="text-sm text-blue-300 font-medium">SMS OTP</p>
                   <p className="text-xs text-blue-400 mt-1">Check your phone for the verification code</p>
-                  {process.env.NODE_ENV === 'development' && (
+                  {import.meta.env.DEV && (
                     <p className="text-xs text-yellow-400 mt-1 font-medium">
                       💡 Test Mode: Use "123456"
                     </p>

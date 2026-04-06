@@ -393,9 +393,9 @@ export default function RecordsPage() {
 
       queryClient.invalidateQueries({ queryKey: ['records'] });
       toast.success('Attachment uploaded successfully');
-    } catch (error) {
-      const apiError = error as ApiError;
-      toast.error(apiError.response?.data?.message || 'Failed to upload attachment');
+    } catch (err: unknown) {
+      const error = err as ApiError;
+      toast.error(error.response?.data?.message || 'Failed to upload attachment');
     } finally {
       setUploadingAttachment(false);
       // Reset the file input
