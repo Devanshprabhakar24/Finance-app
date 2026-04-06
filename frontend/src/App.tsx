@@ -1,7 +1,7 @@
 import { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { setTokenHelpers } from '@/api/axios';
+import { setTokenHelpers, initCsrfToken } from '@/api/axios';
 import { useAuthStore, selectHasHydrated } from '@/store/auth.store';
 import { initializeTheme } from '@/store/ui.store';
 import { useTokenValidation } from '@/hooks/useTokenValidation';
@@ -11,7 +11,6 @@ import { AuthPageSkeleton } from '@/components/loading/AuthPageSkeleton';
 import { DashboardPageSkeleton } from '@/components/loading/DashboardPageSkeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import toast from 'react-hot-toast';
-import apiClient from '@/api/axios';
 
 // Lazy load pages
 const LandingPage = lazy(() => import('@/pages/auth/LandingPage'));
@@ -70,8 +69,8 @@ function App() {
       },
     });
 
-    // ✅ ADD THIS — seeds the CSRF cookie before any POST/PATCH/DELETE fires
-    apiClient.get('/csrf-token').catch(() => {});
+    // ✅ Fetch CSRF token from backend and store in memory (cross-origin safe)
+    initCsrfToken();
   }, []);
 
   // Show loading spinner until store is hydrated

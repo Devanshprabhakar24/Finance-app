@@ -226,9 +226,23 @@ let showToast = (type: 'success' | 'error' | 'warning' | 'info', message: string
   }
 };
 
-// CSRF token helper
+// CSRF token — fetched from backend and stored in memory
+// Cannot use document.cookie because the cookie is set on the backend domain (cross-origin)
+let csrfTokenMemory: string | null = null;
+
+export async function initCsrfToken(): Promise<void> {
+  try {
+    const res = await axios.get(`${baseURL}/csrf-token`, { withCredentials: true });
+    csrfTokenMemory = res.data?.csrfToken || null;
+  } catch {
+    csrfTokenMemory = null;
+  }
+}
+
+// CSRF token helper — reads from memory, falls back to cookie for same-origin dev
 let getCsrfToken = (): string | null => {
-  // Read CSRF token from cookie
+  if (csrfTokenMemory) return csrfTokenMemory;
+  // Fallback: try cookie (works in same-origin / local dev)
   const match = document.cookie.match(/csrfToken=([^;]+)/);
   return match ? match[1] : null;
 };
