@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fix Database - Data Isolation</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 100%;
+        padding: 40px;
+      }
+
+      h1 {
+        color: #1a202c;
+        margin-bottom: 10px;
+        font-size: 28px;
+      }
+
+      .subtitle {
+        color: #718096;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      .warning {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+      }
+
+      .warning strong {
+        color: #856404;
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #4a5568;
+        font-weight: 500;
+        font-size: 14px;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 10px;
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-secondary {
+        background: #48bb78;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #38a169;
+      }
+
+      .btn-danger {
+        background: #f56565;
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background: #e53e3e;
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .result {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      .result.success {
+        background: #c6f6d5;
+        border-left: 4px solid #48bb78;
+        color: #22543d;
+      }
+
+      .result.error {
+        background: #fed7d7;
+        border-left: 4px solid #f56565;
+        color: #742a2a;
+      }
+
+      .result.info {
+        background: #bee3f8;
+        border-left: 4px solid #4299e1;
+        color: #2c5282;
+      }
+
+      .loading {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .steps {
+        background: #f7fafc;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+
+      .steps h3 {
+        color: #2d3748;
+        margin-bottom: 15px;
+        font-size: 16px;
+      }
+
+      .steps ol {
+        margin-left: 20px;
+      }
+
+      .steps li {
+        margin-bottom: 8px;
+        color: #4a5568;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔒 Fix Database - Data Isolation</h1>
+      <p class="subtitle">Emergency fix for cross-user data leakage</p>
+
+      <div class="warning">
+        <strong>⚠️ Admin Access Required</strong><br />
+        You must be logged in as an admin to run this fix.
+      </div>
+
+      <div class="input-group">
+        <label for="apiUrl">API URL</label>
+        <input
+          type="text"
+          id="apiUrl"
+          value="https://finance-app-ddaf.onrender.com/api"
+          placeholder="https://your-api.com/api"
+        />
+      </div>
+
+      <div class="input-group">
+        <label for="token">Admin Access Token</label>
+        <input
+          type="password"
+          id="token"
+          placeholder="Paste your admin JWT token here"
+        />
+        <small
+          style="
+            color: #718096;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+          "
+        >
+          Get this from localStorage.getItem('accessToken') in browser console
+        </small>
+      </div>
+
+      <button class="btn btn-secondary" onclick="checkStatus()">
+        1️⃣ Check Status
+      </button>
+
+      <button class="btn btn-primary" onclick="fixDatabase()">
+        2️⃣ Fix Database Now
+      </button>
+
+      <button
+        class="btn btn-danger"
+        onclick="clearOrphaned()"
+        style="margin-top: 20px"
+      >
+        🗑️ Clear Orphaned Records (Optional)
+      </button>
+
+      <div id="result"></div>
+
+      <div class="steps">
+        <h3>📋 How to Use:</h3>
+        <ol>
+          <li>Login to your app as admin</li>
+          <li>Open browser console (F12)</li>
+          <li>Copy token: <code>localStorage.getItem('accessToken')</code></li>
+          <li>Paste token above</li>
+          <li>Click "Check Status" to see what needs fixing</li>
+          <li>Click "Fix Database Now" to apply the fix</li>
+          <li>Wait for confirmation</li>
+          <li>Refresh your app and test</li>
+        </ol>
+      </div>
+    </div>
+
+    <script>
+      function getApiUrl() {
+        return document.getElementById("apiUrl").value.trim();
+      }
+
+      function getToken() {
+        return document.getElementById("token").value.trim();
+      }
+
+      function showResult(message, type = "info") {
+        const resultDiv = document.getElementById("result");
+        resultDiv.className = `result ${type}`;
+        resultDiv.innerHTML = message;
+      }
+
+      async function checkStatus() {
+        const apiUrl = getApiUrl();
+        const token = getToken();
+
+        if (!token) {
+          showResult("❌ Please enter your admin access token", "error");
+          return;
+        }
+
+        showResult("⏳ Checking database status...", "info");
+
+        try {
+          const response = await fetch(`${apiUrl}/migrate/status`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || "Failed to check status");
+          }
+
+          const status = data.data;
+          const needsFix = status.recordsNeedingMigration > 0;
+
+          showResult(
+            `
+                    <strong>📊 Database Status:</strong><br><br>
+                    Total Records: ${status.totalRecords}<br>
+                    Records Needing Fix: <strong>${status.recordsNeedingMigration}</strong><br>
+                    Records Already Fixed: ${status.recordsAlreadyMigrated}<br>
+                    VIEWER Users to Migrate: ${status.viewerUsersNeedingMigration}<br><br>
+                    ${needsFix ? '⚠️ <strong>Migration needed!</strong> Click "Fix Database Now"' : "✅ <strong>All records are fixed!</strong>"}
+                `,
+            needsFix ? "info" : "success",
+          );
+        } catch (error) {
+          showResult(`❌ Error: ${error.message}`, "error");
+        }
+      }
+
+      async function fixDatabase() {
+        const apiUrl = getApiUrl();
+        const token = getToken();
+
+        if (!token) {
+          showResult("❌ Please enter your admin access token", "error");
+          return;
+        }
+
+        if (
+          !confirm("⚠️ This will update all records without userId. Continue?")
+        ) {
+          return;
+        }
+
+        showResult(
+          "⏳ Fixing database... This may take a few seconds...",
+          "info",
+        );
+
+        try {
+          const response = await fetch(`${apiUrl}/migrate/fix-data-isolation`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || "Failed to fix database");
+          }
+
+          showResult(
+            `
+                    <strong>✅ Database Fixed Successfully!</strong><br><br>
+                    Records Fixed: <strong>${data.data.recordsFixed}</strong><br>
+                    Timestamp: ${new Date(data.data.timestamp).toLocaleString()}<br><br>
+                    🎉 <strong>Data isolation is now enforced!</strong><br>
+                    Users can only see their own records.
+                `,
+            "success",
+          );
+        } catch (error) {
+          showResult(`❌ Error: ${error.message}`, "error");
+        }
+      }
+
+      async function clearOrphaned() {
+        const apiUrl = getApiUrl();
+        const token = getToken();
+
+        if (!token) {
+          showResult("❌ Please enter your admin access token", "error");
+          return;
+        }
+
+        if (
+          !confirm(
+            "⚠️ WARNING: This will delete records with no owner. This is irreversible! Continue?",
+          )
+        ) {
+          return;
+        }
+
+        showResult("⏳ Clearing orphaned records...", "info");
+
+        try {
+          const response = await fetch(
+            `${apiUrl}/migrate/clear-orphaned-records`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || "Failed to clear orphaned records");
+          }
+
+          showResult(
+            `
+                    <strong>🗑️ Orphaned Records Cleared!</strong><br><br>
+                    Records Deleted: <strong>${data.data.recordsDeleted}</strong><br><br>
+                    ${data.data.recordsDeleted === 0 ? "✅ No orphaned records found" : "✅ Cleanup completed"}
+                `,
+            "success",
+          );
+        } catch (error) {
+          showResult(`❌ Error: ${error.message}`, "error");
+        }
+      }
+    </script>
+  </body>
+</html>
