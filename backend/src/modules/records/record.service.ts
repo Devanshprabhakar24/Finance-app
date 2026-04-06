@@ -51,7 +51,7 @@ export const createRecord = async (
  * - Admin with targetUserId: returns records for that specific user
  * - Analyst with no targetUserId: returns ALL records with user info (read only)
  * - Analyst with targetUserId: returns records for that specific user (read only)
- * - User: returns only their own records
+ * - User: returns only their own records (STRICT - no exceptions)
  */
 export const getAllRecords = async (
   filters: RecordFilterInput,
@@ -60,7 +60,7 @@ export const getAllRecords = async (
 ): Promise<PaginationResult<IFinancialRecord>> => {
   const query: FilterQuery<IFinancialRecord> = { isDeleted: false };
 
-  // Apply userId filter based on role
+  // 🔒 SECURITY: Apply userId filter based on role
   if (requestingUserRole === UserRole.ADMIN) {
     // Admin with targetUserId filters to that user, otherwise sees all
     if (targetUserId) {
@@ -74,8 +74,24 @@ export const getAllRecords = async (
     }
     // No userId filter = analyst sees all records (read-only)
   } else {
-    // Regular user sees only their own records
+    // 🚨 CRITICAL: Regular user MUST only see their own records
+    // Validate targetUserId exists to prevent data leakage
+    if (!targetUserId) {
+      throw new ForbiddenError('User ID is required for data access');
+    }
+    
+    // STRICT filter: only records belonging to this specific user
     query.userId = new Types.ObjectId(targetUserId);
+    
+    // 🔒 ADDITIONAL SECURITY: Also filter by createdBy as fallback
+    // This ensures even if userId is missing on old records, they won't leak
+    query.$or = [
+      { userId: new Types.ObjectId(targetUserId) },
+      { 
+        userId: { $exists: false }, 
+        createdBy: new Types.ObjectId(targetUserId) 
+      }
+    ];
   }
 
   if (filters.type) query.type = filters.type;
@@ -114,6 +130,7 @@ export const getAllRecords = async (
 
 /**
  * Get record by ID with RBAC check
+ * 🔒 SECURITY: Enforces strict ownership validation
  */
 export const getRecordById = async (
   recordId: string,
@@ -130,11 +147,18 @@ export const getRecordById = async (
 
   if (!record) throw new NotFoundError('Financial record not found');
 
-  // Check access: admin can see all, others only their own
-  if (requestingUserRole !== UserRole.ADMIN && requestingUserRole !== UserRole.ANALYST) {
-    if (record.userId.toString() !== requestingUserId) {
-      throw new ForbiddenError('You can only view your own records');
-    }
+  // 🔒 SECURITY: Check access based on role
+  if (requestingUserRole === UserRole.ADMIN || requestingUserRole === UserRole.ANALYST) {
+    // Admin and Analyst can view any record
+    return record as unknown as IFinancialRecord;
+  }
+  
+  // 🚨 CRITICAL: Regular users can ONLY view their own records
+  // Check both userId and createdBy for backwards compatibility
+  const recordOwnerId = record.userId?.toString() || record.createdBy?.toString();
+  
+  if (recordOwnerId !== requestingUserId) {
+    throw new ForbiddenError('Access denied. You can only view your own records');
   }
 
   return record as unknown as IFinancialRecord;
@@ -145,6 +169,7 @@ export const getRecordById = async (
  * - Admin: can update any record
  * - Analyst: forbidden
  * - User: can only update their own records
+ * 🔒 SECURITY: Strict ownership validation
  */
 export const updateRecord = async (
   recordId: string,
@@ -160,10 +185,12 @@ export const updateRecord = async (
   const record = await FinancialRecord.findOne({ _id: recordId, isDeleted: false });
   if (!record) throw new NotFoundError('Financial record not found');
 
-  // Check ownership for non-admin users
+  // 🔒 SECURITY: Check ownership for non-admin users
   if (requestingUserRole !== UserRole.ADMIN) {
-    if (record.userId.toString() !== requestingUserId) {
-      throw new ForbiddenError('You can only update your own records');
+    const recordOwnerId = record.userId?.toString() || record.createdBy?.toString();
+    
+    if (recordOwnerId !== requestingUserId) {
+      throw new ForbiddenError('Access denied. You can only update your own records');
     }
   }
 
@@ -180,6 +207,7 @@ export const updateRecord = async (
  * - Admin: can delete any record
  * - Analyst: forbidden
  * - User: can only delete their own records
+ * 🔒 SECURITY: Strict ownership validation
  */
 export const deleteRecord = async (
   recordId: string,
@@ -194,10 +222,12 @@ export const deleteRecord = async (
   const record = await FinancialRecord.findOne({ _id: recordId, isDeleted: false });
   if (!record) throw new NotFoundError('Financial record not found');
 
-  // Check ownership for non-admin users
+  // 🔒 SECURITY: Check ownership for non-admin users
   if (requestingUserRole !== UserRole.ADMIN) {
-    if (record.userId.toString() !== requestingUserId) {
-      throw new ForbiddenError('You can only delete your own records');
+    const recordOwnerId = record.userId?.toString() || record.createdBy?.toString();
+    
+    if (recordOwnerId !== requestingUserId) {
+      throw new ForbiddenError('Access denied. You can only delete your own records');
     }
   }
 
@@ -229,14 +259,26 @@ export const deleteRecord = async (
 
 /**
  * Upload attachment to record
+ * 🔒 SECURITY: Only record owner can upload attachments
  */
 export const uploadAttachment = async (
   recordId: string,
   buffer: Buffer,
-  resourceType: 'image' | 'raw' = 'image'
+  resourceType: 'image' | 'raw' = 'image',
+  requestingUserId?: string,
+  requestingUserRole?: UserRole
 ): Promise<IFinancialRecord> => {
   const record = await FinancialRecord.findOne({ _id: recordId, isDeleted: false });
   if (!record) throw new NotFoundError('Financial record not found');
+
+  // 🔒 SECURITY: Validate ownership (if user info provided)
+  if (requestingUserId && requestingUserRole !== UserRole.ADMIN) {
+    const recordOwnerId = record.userId?.toString() || record.createdBy?.toString();
+    
+    if (recordOwnerId !== requestingUserId) {
+      throw new ForbiddenError('Access denied. You can only upload attachments to your own records');
+    }
+  }
 
   if (record.attachmentPublicId) {
     try {

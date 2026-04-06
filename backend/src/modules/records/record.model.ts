@@ -68,7 +68,7 @@ const financialRecordSchema = new Schema<IFinancialRecord>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: false, // Temporarily optional for migration
+      required: [true, 'User ID is required'], // 🔒 SECURITY: Now required for data isolation
       index: true,
     },
     createdBy: {
