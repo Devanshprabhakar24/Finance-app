@@ -18,11 +18,11 @@ Go to https://finance-app-one-zeta.vercel.app and sign in with one of the demo a
 
 ### Demo Accounts
 
-| Role    | Email               | Password   | Access                                                    |
-| ------- | ------------------- | ---------- | --------------------------------------------------------- |
-| Admin   | admin@fin.com   | Admin@123 | Full access — users, records, analytics, create for users |
+| Role    | Email           | Password    | Access                                                    |
+| ------- | --------------- | ----------- | --------------------------------------------------------- |
+| Admin   | admin@fin.com   | Admin@123   | Full access — users, records, analytics, create for users |
 | Analyst | analyst@fin.dev | Analyst123@ | Read-only records + analytics, can filter by user         |
-| User    | user@user.dev    | Devansh24@ | Can manage own records only, no Transactions page         |
+| User    | user@user.dev   | Devansh24@  | Can manage own records only, no Transactions page         |
 
 ### OTP Step
 
@@ -90,14 +90,28 @@ cp frontend/.env.example frontend/.env # set VITE_API_BASE_URL=http://localhost:
 ```
 
 ```bash
+# Run database migration (IMPORTANT - run this first!)
+cd backend && npm run migrate:userId
+
 # Start backend (port 8000)
-cd backend && npm run dev
+npm run dev
 
 # Start frontend (port 3000)
-cd frontend && npm run dev
+cd ../frontend && npm run dev
 ```
 
 Open http://localhost:3000 — use OTP `123456` in dev mode.
+
+### Important: Database Migration
+
+Before running the app for the first time, you MUST run the migration script to add the `userId` field to existing records:
+
+```bash
+cd backend
+npm run migrate:userId
+```
+
+For production deployment, see [PRODUCTION-MIGRATION.md](./PRODUCTION-MIGRATION.md).
 
 ### Useful Commands
 

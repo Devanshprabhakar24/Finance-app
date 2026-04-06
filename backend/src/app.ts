@@ -25,6 +25,7 @@ import authRoutes from './modules/auth/auth.routes';
 import userRoutes from './modules/users/user.routes';
 import recordRoutes from './modules/records/record.routes';
 import dashboardRoutes from './dashboard/dashboard.routes';
+import migrationRoutes from './routes/migration.routes';
 
 // Import swagger
 import { swaggerSpec } from './swagger/swagger';
@@ -187,6 +188,7 @@ export const createApp = (): Application => {
   app.use('/api/users', userRoutes);
   app.use('/api/records', recordRoutes);
   app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/migrate', migrationRoutes);
 
   // Section 7.4: Disable Swagger in production
   if (env.nodeEnv !== 'production') {
