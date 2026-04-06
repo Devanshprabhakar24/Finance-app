@@ -1,11 +1,12 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { API_CONFIG } from '@/utils/constants';
+import { APP_CONFIG } from '@/config/app.config';
 
 /**
  * Axios instance with interceptors for authentication and error handling
  */
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const baseURL = APP_CONFIG.URLS.BACKEND;
 
 // Create axios instance
 export const apiClient = axios.create({

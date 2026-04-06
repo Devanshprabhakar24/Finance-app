@@ -5,6 +5,7 @@ import { useUIStore } from '@/store/ui.store';
 import { usePermission } from '@/hooks/usePermission';
 import { logout as logoutApi } from '@/api/auth.api';
 import { cn } from '@/utils/cn';
+import { APP_CONFIG } from '@/config/app.config';
 import {
   LayoutDashboard,
   Receipt,
@@ -84,7 +85,7 @@ export function Sidebar() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
-                Zorvyn
+                {APP_CONFIG.NAME}
               </h1>
             </div>
           )}

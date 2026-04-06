@@ -8,7 +8,7 @@ export const swaggerSpec = {
     description: 'Production-grade Finance Dashboard Backend API with OTP-based authentication',
     contact: {
       name: 'API Support',
-      email: 'support@finance-dashboard.dev',
+      email: env.SUPPORT_EMAIL || 'support@finance-dashboard.dev',
     },
   },
   servers: [

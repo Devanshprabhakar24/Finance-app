@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu, X, ArrowRight, CheckCircle, Shield, Lock, TrendingUp, Users, BarChart3, FileText, Zap, Globe } from 'lucide-react';
+import { APP_CONFIG } from '@/config/app.config';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export default function LandingPage() {
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
-                Zorvyn
+                {APP_CONFIG.NAME}
               </span>
             </div>
 
@@ -116,7 +117,7 @@ export default function LandingPage() {
 
             {/* Subtitle */}
             <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
-              Zorvyn delivers cutting-edge financial technology solutions with bank-grade security, 
+              {APP_CONFIG.NAME} delivers cutting-edge financial technology solutions with bank-grade security, 
               real-time analytics, and seamless compliance for modern enterprises.
             </p>
 
@@ -347,7 +348,7 @@ export default function LandingPage() {
                 Ready to Transform Your Financial Operations?
               </h2>
               <p className="text-xl text-sky-100 mb-8 max-w-2xl mx-auto">
-                Join leading enterprises who trust Zorvyn for secure, compliant, and intelligent financial management.
+                Join leading enterprises who trust {APP_CONFIG.NAME} for secure, compliant, and intelligent financial management.
               </p>
               <button
                 onClick={() => navigate('/register')}
@@ -370,11 +371,11 @@ export default function LandingPage() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
-                Zorvyn
+                {APP_CONFIG.NAME}
               </span>
             </div>
             <div className="text-slate-400 text-sm">
-              © 2024 Zorvyn. All rights reserved. | Secure, Compliant & Intelligent Financial Systems
+              © 2024 {APP_CONFIG.NAME}. All rights reserved. | {APP_CONFIG.DESCRIPTION}
             </div>
           </div>
         </div>

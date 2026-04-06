@@ -51,8 +51,16 @@ const envSchema = z.object({
   CLOUDINARY_API_KEY: z.string().min(1, 'Cloudinary API key is required'),
   CLOUDINARY_API_SECRET: z.string().min(1, 'Cloudinary API secret is required'),
 
+  // Application Configuration
+  APP_NAME: z.string().default('Finance Dashboard API'),
+  SUPPORT_EMAIL: z.string().email().default('support@finance-dashboard.dev'),
+  
   // CORS
-  ALLOWED_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
+  ALLOWED_ORIGINS: z.string().default(
+    process.env.NODE_ENV === 'production' 
+      ? 'https://finance-app-one-zeta.vercel.app'
+      : 'http://localhost:3000,http://localhost:5173'
+  ),
 
   // Redis (Section 5.1 - optional, gracefully degrades if not configured)
   REDIS_URL: z.string().url().optional(),
