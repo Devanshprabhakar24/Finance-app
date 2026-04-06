@@ -55,32 +55,34 @@ export default function DashboardPage() {
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
 
-  // Fetch dashboard data with date range
+  // 🔒 SECURITY: Fetch dashboard data with userId in query key to prevent cache collisions
   const { data: summaryData, isLoading: summaryLoading } = useQuery({
-    queryKey: queryKeys.dashboard.summary(fromDate ? new Date(fromDate).getFullYear() : undefined),
+    queryKey: queryKeys.dashboard.summary(user?._id || '', fromDate ? new Date(fromDate).getFullYear() : undefined),
     queryFn: () => getSummary({ from: fromDate || undefined, to: toDate || undefined }),
-    staleTime: 5 * 60 * 1000, // 5 minutes - changes only after record mutations
+    enabled: !!user?._id, // Only fetch when user is loaded
+    staleTime: 5 * 60 * 1000,
   });
 
   // Only fetch analytics data for ANALYST and ADMIN
   const { data: categoryData, isLoading: categoryLoading } = useQuery({
-    queryKey: queryKeys.dashboard.categories(fromDate ? new Date(fromDate).getFullYear() : undefined),
+    queryKey: queryKeys.dashboard.categories(user?._id || '', fromDate ? new Date(fromDate).getFullYear() : undefined),
     queryFn: () => getCategoryBreakdown({ from: fromDate || undefined, to: toDate || undefined }),
-    enabled: canViewAnalytics,
+    enabled: canViewAnalytics && !!user?._id,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: trendsData, isLoading: trendsLoading } = useQuery({
-    queryKey: queryKeys.dashboard.trends(),
+    queryKey: queryKeys.dashboard.trends(user?._id || ''),
     queryFn: () => getMonthlyTrends(),
-    enabled: canViewAnalytics,
-    staleTime: 30 * 60 * 1000, // 30 minutes - changes at most once per month
+    enabled: canViewAnalytics && !!user?._id,
+    staleTime: 30 * 60 * 1000,
   });
 
   const { data: recentData, isLoading: recentLoading } = useQuery({
-    queryKey: queryKeys.dashboard.recent(),
+    queryKey: queryKeys.dashboard.recent(user?._id || ''),
     queryFn: () => getRecentTransactions(5),
-    staleTime: 60 * 1000, // 1 minute - admin may create records
+    enabled: !!user?._id,
+    staleTime: 60 * 1000,
   });
 
   const summary = summaryData?.data || {

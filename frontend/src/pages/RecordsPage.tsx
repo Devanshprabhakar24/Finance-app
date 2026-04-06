@@ -63,6 +63,13 @@ export default function RecordsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const { can, isAdmin, isAnalyst } = usePermission();
+  
+  // 🔒 SECURITY: Helper to invalidate queries with userId for proper cache scoping
+  const invalidateRecordQueries = () => {
+    if (!user?._id) return;
+    queryClient.invalidateQueries({ queryKey: queryKeys.records.all(user._id) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all(user._id) });
+  };
 
   // State
   const [search, setSearch] = useState('');
@@ -182,9 +189,9 @@ export default function RecordsPage() {
     userId: '', // For admin to specify which user owns the record
   });
 
-  // Fetch records with search and date range
+  // 🔒 SECURITY: Fetch records with userId in query key to prevent cache collisions
   const { data, isLoading, error } = useQuery({
-    queryKey: queryKeys.records.list({ 
+    queryKey: queryKeys.records.list(user?._id || '', { 
       type: typeFilter || undefined, 
       category: categoryFilter || undefined, 
       search: debouncedSearch || undefined, 
@@ -212,13 +219,12 @@ export default function RecordsPage() {
   const createMutation = useMutation({
     mutationFn: createRecord,
     onSuccess: () => {
-      // Invalidate all records queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.records.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      // 🔒 SECURITY: Invalidate queries with userId
+      invalidateRecordQueries();
       
       // Force refetch the current query
       queryClient.refetchQueries({ 
-        queryKey: queryKeys.records.list({ 
+        queryKey: queryKeys.records.list(user?._id || '', { 
           type: typeFilter || undefined, 
           category: categoryFilter || undefined, 
           search: debouncedSearch || undefined, 
@@ -243,13 +249,12 @@ export default function RecordsPage() {
     mutationFn: ({ id, data }: { id: string; data: Partial<CreateRecordPayload> }) =>
       updateRecord(id, data),
     onSuccess: () => {
-      // Invalidate all records queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.records.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      // 🔒 SECURITY: Invalidate queries with userId
+      invalidateRecordQueries();
       
       // Force refetch the current query
       queryClient.refetchQueries({ 
-        queryKey: queryKeys.records.list({ 
+        queryKey: queryKeys.records.list(user?._id || '', { 
           type: typeFilter || undefined, 
           category: categoryFilter || undefined, 
           search: debouncedSearch || undefined, 
@@ -274,13 +279,12 @@ export default function RecordsPage() {
   const deleteMutation = useMutation({
     mutationFn: deleteRecord,
     onSuccess: () => {
-      // Invalidate all records queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.records.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      // 🔒 SECURITY: Invalidate queries with userId
+      invalidateRecordQueries();
       
       // Force refetch the current query
       queryClient.refetchQueries({ 
-        queryKey: queryKeys.records.list({ 
+        queryKey: queryKeys.records.list(user?._id || '', { 
           type: typeFilter || undefined, 
           category: categoryFilter || undefined, 
           search: debouncedSearch || undefined, 
@@ -446,9 +450,10 @@ export default function RecordsPage() {
             <button
               type="button"
               onClick={() => {
-                queryClient.invalidateQueries({ queryKey: queryKeys.records.all });
+                // 🔒 SECURITY: Invalidate with userId
+                invalidateRecordQueries();
                 queryClient.refetchQueries({ 
-                  queryKey: queryKeys.records.list({ 
+                  queryKey: queryKeys.records.list(user?._id || '', { 
                     type: typeFilter || undefined, 
                     category: categoryFilter || undefined, 
                     search: debouncedSearch || undefined, 

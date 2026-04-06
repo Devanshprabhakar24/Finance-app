@@ -5,12 +5,19 @@ import toast from 'react-hot-toast';
 import { z } from 'zod';
 import { useDebounce } from '@/hooks/useDebounce';
 import { checkAvailability } from '@/api/auth.api';
+import { useAuthStore } from '@/store/auth.store';
 
 const emailSchema = z.string().email('Invalid email format');
 const phoneSchema = z.string().regex(/^\+[1-9]\d{1,14}$/, 'Phone must be in E.164 format (e.g., +911234567890)');
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
+
+  // 🔒 SECURITY: Clear any stale auth data on mount to prevent token inheritance
+  useEffect(() => {
+    logout();
+  }, [logout]);
 
   // Email fields
   const [email, setEmail] = useState('');

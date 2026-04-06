@@ -40,9 +40,9 @@ export default function UsersPage() {
     setPage(1); 
   }, [debouncedSearch, roleFilter, statusFilter]);
 
-  // Fetch users
+  // 🔒 SECURITY: Fetch users with userId in query key to prevent cache collisions
   const { data, isLoading, error } = useQuery({
-    queryKey: queryKeys.users.list({ 
+    queryKey: queryKeys.users.list(user?._id || '', { 
       search: debouncedSearch || undefined, 
       role: roleFilter || undefined, 
       status: statusFilter || undefined, 
@@ -56,7 +56,8 @@ export default function UsersPage() {
       page, 
       limit: 10 
     }),
-    staleTime: 5 * 60 * 1000, // 5 minutes - low change frequency
+    enabled: !!user?._id,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Update user mutation
@@ -64,7 +65,8 @@ export default function UsersPage() {
     mutationFn: ({ id, data }: { id: string; data: { role?: string; status?: string } }) =>
       updateUser(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      // 🔒 SECURITY: Invalidate with userId
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all(user?._id || '') });
       toast.success('User updated successfully');
       setShowEditModal(false);
       setSelectedUser(null);
@@ -78,7 +80,8 @@ export default function UsersPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteUser(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      // 🔒 SECURITY: Invalidate with userId
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all(user?._id || '') });
       toast.success('User deactivated successfully');
       setShowDeleteModal(false);
       setSelectedUser(null);

@@ -46,43 +46,44 @@ if (typeof window !== 'undefined') {
 
 /**
  * Query Keys Factory
- * Centralized query key management for better cache control
+ * 🔒 SECURITY: All query keys MUST include userId to prevent cache collisions between users
+ * This ensures User A's cached data is never shown to User B
  */
 export const queryKeys = {
   // Auth
   auth: {
-    me: ['auth', 'me'] as const,
+    me: (userId: string) => ['auth', 'me', userId] as const,
   },
 
-  // Dashboard
+  // Dashboard - userId required for proper cache scoping
   dashboard: {
-    all: ['dashboard'] as const,
-    summary: (year?: number) => ['dashboard', 'summary', year] as const,
-    trends: (year?: number) => ['dashboard', 'trends', year] as const,
-    categories: (year?: number) => ['dashboard', 'categories', year] as const,
-    recent: () => ['dashboard', 'recent'] as const,
+    all: (userId: string) => ['dashboard', userId] as const,
+    summary: (userId: string, year?: number) => ['dashboard', 'summary', userId, year] as const,
+    trends: (userId: string, year?: number) => ['dashboard', 'trends', userId, year] as const,
+    categories: (userId: string, year?: number) => ['dashboard', 'categories', userId, year] as const,
+    recent: (userId: string) => ['dashboard', 'recent', userId] as const,
   },
 
-  // Records
+  // Records - userId required for proper cache scoping
   records: {
-    all: ['records'] as const,
-    lists: () => ['records', 'list'] as const,
-    list: (filters?: Record<string, unknown>) => ['records', 'list', filters] as const,
-    detail: (id: string) => ['records', 'detail', id] as const,
+    all: (userId: string) => ['records', userId] as const,
+    lists: (userId: string) => ['records', 'list', userId] as const,
+    list: (userId: string, filters?: Record<string, unknown>) => ['records', 'list', userId, filters] as const,
+    detail: (userId: string, id: string) => ['records', 'detail', userId, id] as const,
   },
 
-  // Users
+  // Users - admin/analyst only, but still scoped by requesting user
   users: {
-    all: ['users'] as const,
-    lists: () => ['users', 'list'] as const,
-    list: (filters?: Record<string, unknown>) => ['users', 'list', filters] as const,
-    detail: (id: string) => ['users', 'detail', id] as const,
-    stats: () => ['users', 'stats'] as const,
+    all: (userId: string) => ['users', userId] as const,
+    lists: (userId: string) => ['users', 'list', userId] as const,
+    list: (userId: string, filters?: Record<string, unknown>) => ['users', 'list', userId, filters] as const,
+    detail: (userId: string, id: string) => ['users', 'detail', userId, id] as const,
+    stats: (userId: string) => ['users', 'stats', userId] as const,
   },
 
-  // Profile
+  // Profile - userId required
   profile: {
-    me: ['profile', 'me'] as const,
+    me: (userId: string) => ['profile', 'me', userId] as const,
   },
 } as const;
 

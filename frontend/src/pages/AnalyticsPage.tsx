@@ -43,25 +43,25 @@ export default function AnalyticsPage() {
 
   // Fetch users list for admin/analyst
   const { data: usersData } = useQuery({
-    queryKey: ['users', 'all'],
+    queryKey: queryKeys.users.list(user?._id || ''),
     queryFn: getAllUsers,
-    enabled: isAdmin || isAnalyst,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: (isAdmin || isAnalyst) && !!user?._id,
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch analytics data with userId filter
+  // 🔒 SECURITY: Fetch analytics data with userId in query key to prevent cache collisions
   const { data: categoryData, isLoading: categoryLoading, error: categoryError } = useQuery({
-    queryKey: [...queryKeys.dashboard.categories(), selectedUserId],
+    queryKey: queryKeys.dashboard.categories(user?._id || '', undefined),
     queryFn: () => getCategoryBreakdown({ userId: selectedUserId || undefined }),
-    enabled: isAnalystOrAdmin,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: isAnalystOrAdmin && !!user?._id,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: trendsData, isLoading: trendsLoading, error: trendsError } = useQuery({
-    queryKey: [...queryKeys.dashboard.trends(), selectedUserId],
+    queryKey: queryKeys.dashboard.trends(user?._id || '', undefined),
     queryFn: () => getMonthlyTrends(undefined, selectedUserId || undefined),
-    enabled: isAnalystOrAdmin,
-    staleTime: 30 * 60 * 1000, // 30 minutes - changes at most once per month
+    enabled: isAnalystOrAdmin && !!user?._id,
+    staleTime: 30 * 60 * 1000,
   });
 
   if (!isAnalystOrAdmin) {

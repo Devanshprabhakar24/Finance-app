@@ -1,16 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { loginSchema, type LoginInput } from '@/schemas/auth.schema';
 import { login as loginApi } from '@/api/auth.api';
+import { useAuthStore } from '@/store/auth.store';
 import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const logout = useAuthStore((state) => state.logout);
+
+  // 🔒 SECURITY: Clear any stale auth data on mount to prevent token inheritance
+  // If previous session crashed or logout failed, this ensures clean slate
+  useEffect(() => {
+    logout();
+  }, [logout]);
 
   const {
     register,

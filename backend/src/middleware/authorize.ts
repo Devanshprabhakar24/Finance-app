@@ -83,9 +83,15 @@ export const resolveTargetUser = (req: Request, _res: Response, next: NextFuncti
       req.targetUserId = undefined;
     }
   } 
-  // Analyst can filter by userId (read only)
-  else if (req.user.role === UserRole.ANALYST && req.query?.userId) {
-    req.targetUserId = req.query.userId as string;
+  // 🔒 SECURITY FIX: Analyst can filter by userId (read only), but defaults to their own userId
+  // Previously, ANALYST without query.userId would get undefined, leaking all users' data
+  else if (req.user.role === UserRole.ANALYST) {
+    if (req.query?.userId) {
+      req.targetUserId = req.query.userId as string;
+    } else {
+      // Default to analyst's own userId to prevent data leakage
+      req.targetUserId = req.user.id;
+    }
   } 
   // Regular user always sees only themselves
   else {
